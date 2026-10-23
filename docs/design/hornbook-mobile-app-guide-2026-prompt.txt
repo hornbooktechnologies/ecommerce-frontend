@@ -1,0 +1,11 @@
+Generated with the built-in image generation tool.
+
+Use case: ads-marketing.
+Create a polished wide 16:9 blog featured image for Hornbook Technologies, about a 2026 guide to building a successful mobile app.
+Input image: supplied Hornbook logo is a supporting brand asset. Reproduce the full supplied logo faithfully, including its symbol, wordmark and small company descriptor, in a modest top-left placement on white. Preserve its proportions and blue color; no redesign.
+Style: premium clean technology editorial illustration, crisp typography and tasteful dimensional smartphone rendering. Match the actual website's white and pale ice-blue #e8f1ff backgrounds, primary blue #3A7FC4, logo blue #5283C5, dark charcoal headings, rounded white cards and subtle blue shadows. Generous whitespace, restrained professional design, no dark neon aesthetic.
+Composition: top-left logo; beneath it a large clearly readable three-line headline exactly "Build a Successful\nMobile App\nin 10 Steps". Small blue pill above headline says "2026 GUIDE". Right half: elegant angled smartphone with a tasteful generic ecommerce and analytics interface, surrounded by a few floating miniature UI cards suggesting design, coding, testing and launch. Make the phone visually striking but uncluttered.
+Bottom quarter: a beautifully aligned compact roadmap in two rows of five steps, each with a blue numbered circle, tiny simple icon, and short label. Exact labels in sequence: "01 Validate", "02 Research", "03 Scope MVP", "04 Choose Platform", "05 Business Model", "06 Design UX", "07 Build", "08 Test", "09 Launch", "10 Improve". Reading order left to right on each row. Subtle connecting lines. All ten labels clear and correctly spelled.
+Small supporting line below the headline exactly "Ecommerce • SaaS • Custom Software".
+Footer small text exactly "hornbooktechnologies.com".
+Keep all content within safe margins. Excellent hierarchy, balanced layout, not a dense infographic. Do not add store requirement claims, certifications, official Apple/Google badges, invented slogans or extra logos. Solid opaque background.

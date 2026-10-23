@@ -1,0 +1,10 @@
+.next/
+node_modules/
+package-lock.json
+next-env.d.ts
+/data/
+test-results/
+playwright-report/
+docs/design/
+AGENTS.md
+*.tsbuildinfo
