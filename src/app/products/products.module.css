@@ -1,0 +1,4 @@
+.heading { padding: 28px 0 32px; margin-bottom: 28px; border-bottom: 1px solid var(--line); }
+.heading h1 { color: var(--ink); font-size: clamp(32px, 4vw, 48px); line-height: 1.2; letter-spacing: -.04em; margin: 12px 0; }
+.heading p { max-width: 650px; line-height: 1.65; color: var(--muted); }
+@media (max-width: 600px) { .heading { padding: 20px 0 24px; margin-bottom: 20px; } }

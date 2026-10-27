@@ -2,139 +2,132 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  Truck,
-} from 'lucide-react';
-import {
-  money,
-  photo,
-  products,
-  slugify,
-} from '@/features/storefront/data/catalog';
-
-const slides = [
-  {
-    product: products[0],
-    image: '/images/campaign-headphones-v2.webp',
-    eyebrow: 'OCTOBER TECH EVENT',
-    title: 'Switch off the noise.',
-    accent: 'Turn up your world.',
-    copy: 'Our most-loved wireless headphones are now at their best price of the month.',
-    offer: '50% OFF',
-    theme: 'sage',
-  },
-  {
-    product: products[1],
-    image: '/images/campaign-fashion-v2.webp',
-    eyebrow: 'THE NEW-SEASON EDIT',
-    title: 'Everyday style.',
-    accent: 'Extraordinary prices.',
-    copy: 'Fresh fashion favourites made for repeat wear, with limited-time savings.',
-    offer: 'UP TO 40% OFF',
-    theme: 'rose',
-  },
-  {
-    product: products[2],
-    image: '/images/campaign-home-v2.webp',
-    eyebrow: 'HOME REFRESH DAYS',
-    title: 'A calmer home',
-    accent: 'starts right here.',
-    copy: 'Bring thoughtful comfort home with our top-rated Nordic collection.',
-    offer: 'SAVE ₹4,500',
-    theme: 'sand',
-  },
-];
+import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { money, photo, type HeroSlide } from '../data/live-catalog';
+import { useCatalog } from '../catalog-provider';
+import styles from './monthly-hero.module.css';
 
 export default function MonthlyHero() {
+  const { products, configuration } = useCatalog();
+  const hero = configuration.hero;
+  // Existing stores retain automatic product slides until their first publication.
+  // A deliberately disabled or empty published hero must not bring that fallback back.
+  const slides: HeroSlide[] = hero ? hero.slides : products.slice(0, 3).map((product, index) => ({
+    id: product.id, eyebrow: `DISCOVER ${configuration.store.tenantName.toUpperCase()}`,
+    title: product.name, description: product.description || `Explore the ${product.brand} collection.`,
+    imageUrl: product.image, altText: product.name, href: `/p/${product.slug}`,
+    ctaLabel: 'EXPLORE PRODUCT', tone: (['sage', 'rose', 'sand'] as const)[index % 3],
+    showPrice: true, product,
+  }));
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
+    if (
+      paused ||
+      hero?.enabled === false ||
+      hero?.autoplay === false ||
+      slides.length < 2 ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return;
     const timer = window.setInterval(
       () => setActive((value) => (value + 1) % slides.length),
-      6000,
+      (hero?.intervalSeconds || 6) * 1000,
     );
-    return () => window.clearInterval(timer);
-  }, []);
-  const slide = slides[active];
+    return () => clearInterval(timer);
+  }, [slides.length, paused, hero?.enabled, hero?.autoplay, hero?.intervalSeconds]);
+  const slideIndex = active % slides.length;
+  const slide = slides[slideIndex];
+  if (hero && (!hero.enabled || !slide)) return null;
+  if (!slide)
+    return (
+      <section className="empty-state">
+        <h1>Welcome to {configuration.store.tenantName}</h1>
+        <p>New products will appear here when they are published.</p>
+      </section>
+    );
   const move = (direction: number) =>
     setActive((value) => (value + direction + slides.length) % slides.length);
   return (
     <section
-      className={`campaign-carousel campaign-${slide.theme}`}
+      className={`campaign-carousel campaign-${slide.tone} ${styles.hero}`}
       aria-roledescription="carousel"
-      aria-label="Featured offers"
+      aria-label="Featured campaigns"
+      onMouseEnter={() => setPaused(true)}
+      onFocusCapture={(event) => {
+        if (!(event.target as HTMLElement).closest('.campaign-playback'))
+          setPaused(true);
+      }}
     >
       <div className="campaign-copy">
         <span>{slide.eyebrow}</span>
-        <h1>
-          {slide.title}
-          <br />
-          <em>{slide.accent}</em>
-        </h1>
-        <p>{slide.copy}</p>
-        <div className="campaign-price">
+        <h1>{slide.title}</h1>
+        <p>{slide.description}</p>
+        {slide.showPrice && slide.product && <div className="campaign-price">
           <strong>{money(slide.product.price)}</strong>
-          <del>{money(slide.product.mrp)}</del>
-          <b>{slide.offer}</b>
-        </div>
-        <Link href={`/p/${slugify(slide.product.name)}`}>
-          SHOP THIS PRODUCT <ArrowRight size={17} />
+          {slide.product.mrp > slide.product.price && (
+            <>
+              <del>{money(slide.product.mrp)}</del>
+              <b>{Math.round((1 - slide.product.price / slide.product.mrp) * 100)}% OFF</b>
+            </>
+          )}
+        </div>}
+        <Link href={slide.href}>
+          {slide.ctaLabel} <ArrowRight size={17} aria-hidden="true" />
         </Link>
-        <div className="campaign-trust">
-          <span>
-            <Truck size={14} /> Free delivery
-          </span>
-          <span>
-            <ShieldCheck size={14} /> Easy returns
-          </span>
-        </div>
       </div>
       <Link
-        prefetch
         className="campaign-image"
-        href={`/p/${slugify(slide.product.name)}`}
-        aria-label={`Shop ${slide.product.name}`}
+        href={slide.href}
+        aria-label={slide.ctaLabel + ': ' + slide.title}
       >
         <img
-          key={slide.product.id}
-          src={slide.image || photo(slide.product.image, 900)}
-          alt={slide.product.name}
+          src={photo(slide.imageUrl, 900)}
+          alt={slide.altText}
           decoding="async"
+          fetchPriority="high"
         />
-        <span>
-          <small>FEATURED FIND</small>
+        {slide.product && <span>
+          <small>{slide.product.brand}</small>
           <strong>{slide.product.name}</strong>
-          <b>{slide.product.rating} ★</b>
-        </span>
+          <b>{slide.product.inStock ? 'In stock' : 'Currently unavailable'}</b>
+        </span>}
       </Link>
-      <button
-        className="campaign-arrow campaign-prev"
-        onClick={() => move(-1)}
-        aria-label="Previous offer"
-      >
-        <ChevronLeft />
-      </button>
-      <button
-        className="campaign-arrow campaign-next"
-        onClick={() => move(1)}
-        aria-label="Next offer"
-      >
-        <ChevronRight />
-      </button>
-      <div className="campaign-dots">
-        {slides.map((item, index) => (
+      {slides.length > 1 && (
+        <>
           <button
-            key={item.product.id}
-            className={active === index ? 'active' : ''}
-            onClick={() => setActive(index)}
-            aria-label={`Show offer ${index + 1}`}
-            aria-current={active === index ? 'true' : undefined}
-          />
-        ))}
-      </div>
+            className="campaign-arrow campaign-prev"
+            onClick={() => move(-1)}
+            aria-label="Previous slide"
+          >
+            <ChevronLeft />
+          </button>
+          <button
+            className="campaign-arrow campaign-next"
+            onClick={() => move(1)}
+            aria-label="Next slide"
+          >
+            <ChevronRight />
+          </button>
+          {hero?.autoplay !== false && <button
+            className="campaign-playback"
+            onClick={() => setPaused(!paused)}
+          >
+            {paused ? 'Play slideshow' : 'Pause slideshow'}
+          </button>}
+          <div className="campaign-dots">
+            {slides.map((item, index) => (
+              <button
+                key={item.id}
+                className={slideIndex === index ? 'active' : ''}
+                onClick={() => setActive(index)}
+                aria-label={`Show ${item.title}`}
+                aria-current={slideIndex === index ? 'true' : undefined}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

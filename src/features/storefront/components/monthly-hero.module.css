@@ -1,0 +1,18 @@
+.hero:global(.campaign-carousel) { height: auto; min-height: 420px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); }
+.hero :global(.campaign-copy) { min-width: 0; padding-bottom: 72px; }
+.hero h1, .hero p, .hero a, .hero small, .hero strong { overflow-wrap: anywhere; }
+.hero :global(.campaign-copy) > p { font-size: 14px; color: #435448; }
+.hero :global(.campaign-copy) > span { color: #435448; font-size: 11px; }
+.hero :global(.campaign-copy) > a { margin-top: 18px; font-size: 12px; min-height: 44px; }
+.hero :global(.campaign-image) { min-width: 0; }
+.hero :global(.campaign-image) > img { position: absolute; inset: 0; }
+.hero :global(.campaign-image) > span { min-width: 0; max-width: calc(100% - 56px); }
+.hero :global(.campaign-arrow) { min-width: 44px; min-height: 44px; }
+.hero :global(.campaign-dots) button { min-width: 24px; min-height: 24px; border: 7px solid transparent; background-clip: padding-box; }
+.hero :global(.campaign-playback) { min-height: 44px; }
+@media (max-width: 700px) {
+  .hero:global(.campaign-carousel) { grid-template-columns: minmax(0, 1fr); }
+  .hero :global(.campaign-copy) { padding: 28px 32px; }
+  .hero :global(.campaign-image) { height: 300px; margin-bottom: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { .hero, .hero img { animation: none !important; transition: none !important; } }

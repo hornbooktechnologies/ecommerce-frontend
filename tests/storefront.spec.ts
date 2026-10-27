@@ -1,181 +1,229 @@
 import { test, expect } from '@playwright/test';
+import type {
+  ProductList,
+  ProductDetail,
+} from '../src/features/storefront/data/live-catalog';
 
-test('marketplace deals lead the homepage and visitors can publish a review', async ({
+// Uses the configured Hornbook catalog API. Cart writes use an anonymous test bag; no orders are created.
+test('homepage renders API products, ten per page, and pagination loads another page', async ({
   page,
+  request,
 }) => {
+  const response = await request.get('/api/storefront/products?pageSize=10');
+  expect(response.ok()).toBe(true);
+  const data: ProductList = (await response.json()).data;
   await page.goto('/');
   await expect(
-    page.getByRole('region', { name: 'Featured offers' }),
+    page.getByRole('region', { name: 'Featured campaigns' }),
   ).toBeVisible();
-  await expect(page.getByText('OCTOBER TECH EVENT')).toBeVisible();
-  await page.getByRole('button', { name: /Account/ }).click();
-  await expect(page.getByText('Welcome to AURA')).toBeVisible();
-  await page.getByRole('button', { name: /Account/ }).click();
-  await page.getByRole('button', { name: /All categories/ }).click();
+  await expect(page.locator('#discover .product-card')).toHaveCount(
+    Math.min(10, data.total),
+  );
   await expect(
-    page.locator('.category-menu').getByRole('button', { name: /Electronics/ }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: /All categories/ }).click();
-  await page.getByLabel('5 stars').click();
-  await page.getByLabel('Your name').fill('Test Shopper');
-  await page.getByLabel('Review title').fill('A store worth exploring');
-  await page
-    .getByLabel('Your experience')
-    .fill('The monthly edit made it easy and fun to find something new.');
-  await page.getByRole('button', { name: 'Share my review' }).click();
-  await expect(page.getByText('“A store worth exploring”')).toBeVisible();
-  await expect(
-    page.getByText('Thank you — your review is now live.'),
-  ).toBeVisible();
-  await page.reload();
-  await expect(page.getByText('“A store worth exploring”')).toBeVisible();
+    page.locator('#discover .product-card').first().locator('.product-title'),
+  ).toHaveText(data.items[0].name);
+  if (data.totalPages > 1) {
+    await page
+      .locator('#discover')
+      .getByRole('button', { name: 'Next', exact: true })
+      .click();
+    await expect(page.locator('#discover .catalog-pagination')).toContainText(
+      'Page 2',
+    );
+    await expect(
+      page.locator('#discover .product-card').first().locator('.product-title'),
+    ).not.toHaveText(data.items[0].name);
+  }
 });
 
-test('products open dedicated pages with specifications and reviews', async ({
+test('product details show API images, specifications, variants and published reviews only', async ({
   page,
+  request,
 }) => {
+  const list: ProductList = (
+    await (await request.get('/api/storefront/products?inStock=true')).json()
+  ).data;
+  const product: ProductDetail = (
+    await (
+      await request.get(`/api/storefront/products/${list.items[0].slug}`)
+    ).json()
+  ).data;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
-  const productLink = page
-    .locator('#deal-zone')
-    .getByRole('link', { name: 'View Studio Wireless Headphones' });
-  await expect(productLink).toHaveAttribute(
-    'href',
-    '/p/studio-wireless-headphones',
+  await page.goto(`/p/${product.slug}`);
+  await expect(
+    page.getByRole('heading', { name: product.name, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Product specifications' }),
+  ).toBeVisible();
+  await expect(page.locator('#product-variant option')).toHaveCount(
+    product.variants.length,
   );
-  await page.goto('/p/studio-wireless-headphones');
+  await expect(page.locator('.product-main-image img')).toHaveAttribute(
+    'src',
+    product.images[0].url,
+  );
+  expect(
+    await page
+      .locator('.product-main-image img')
+      .evaluate(
+        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+      ),
+  ).toBe(true);
+  if (!product.reviews)
+    await expect(page.getByText('No published reviews yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Add to bag', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Studio Wireless Headphones' }),
-  ).toBeVisible();
+    page.locator('[data-sonner-toast][data-type="success"]'),
+  ).toContainText('Added to your bag');
   await expect(
-    page.getByRole('heading', { name: 'Specifications' }),
+    page.getByRole('button', { name: 'Added to bag' }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'Shoppers have spoken' }),
-  ).toBeVisible();
-  await expect(page.getByText('Bluetooth 5.3')).toBeVisible();
-  await page
-    .locator('.purchase-panel')
-    .getByRole('button', { name: 'Add to cart', exact: true })
-    .click();
-  await expect(page.getByLabel('1 cart items')).toBeVisible();
-  await page.getByLabel('Delivery PIN code').fill('400001');
-  await page
-    .locator('.delivery-check')
-    .getByRole('button', { name: 'CHECK', exact: true })
-    .click();
-  await expect(page.getByText('Delivery available in 3–5 days')).toBeVisible();
+  await page.getByRole('link', { name: 'View your bag' }).click();
+  await expect(page.getByRole('region', { name: 'Bag items' }).locator('article')).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Bag items' }).locator('article')).toContainText(
+    product.variants[0].sku,
+  );
+  await expect(page.getByText('Ready to review your order?')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Bag items' }).locator('article')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Clear bag', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your bag has room for something good.' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test('cart is a dedicated page for multiple products', async ({ page }) => {
-  await page.goto('/p/studio-wireless-headphones');
-  await page
-    .locator('.purchase-panel')
-    .getByRole('button', { name: 'Add to cart', exact: true })
-    .click();
-  await page.goto('/p/nordic-accent-chair');
-  await page
-    .locator('.purchase-panel')
-    .getByRole('button', { name: 'Add to cart', exact: true })
-    .click();
-  const cartLink = page.getByLabel('2 cart items');
-  await expect(cartLink).toHaveAttribute('href', '/cart');
-  await page.goto('/cart');
-  await expect(page.getByRole('heading', { name: 'My cart' })).toBeVisible();
-  await expect(page.getByRole('article')).toHaveCount(2);
-  await page.getByLabel('Coupon code').fill('AURA10');
-  await page.getByRole('button', { name: 'Apply', exact: true }).click();
-  await expect(page.getByText('Coupon discount')).toBeVisible();
-  await page.getByRole('button', { name: 'Proceed to checkout' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Where should we send it?' }),
-  ).toBeVisible();
-});
-
-test('search provides grouped category and product suggestions', async ({
+test('Sonner notifications are global, dismissible and mobile-friendly', async ({
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Search category' }).click();
-  await expect(
-    page.getByRole('menuitemradio', { name: 'Electronics' }),
-  ).toBeVisible();
-  await page.getByRole('menuitemradio', { name: 'Electronics' }).click();
+  await page.getByRole('button', { name: /Deliver to/ }).click();
+  await page.getByLabel('Six digit PIN code').fill('560001');
+  await page.getByRole('button', { name: 'Save location' }).click();
+  const notice = page.locator('[data-sonner-toast]');
+  await expect(notice).toContainText(
+    'Location saved. Availability is confirmed at checkout.',
+  );
+  await expect(notice).toHaveAttribute('data-type', 'success');
+  await expect(page.locator('[data-sonner-toaster]')).toHaveCount(1);
+  await page.setViewportSize({ width: 375, height: 844 });
+  const box = await notice.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  await notice.getByRole('button', { name: 'Close toast' }).click();
+  await expect(notice).toHaveCount(0);
+  await expect(page.locator('.toast')).toHaveCount(0);
+});
+
+test('search uses the catalog API and canonical product links', async ({
+  page,
+}) => {
+  await page.goto('/');
   await page
     .locator('.commerce-search')
     .getByLabel('Search all products')
     .fill('headphones');
-  await expect(page.getByText('TOP PRODUCT MATCHES')).toBeVisible();
   await expect(
     page
       .locator('.product-suggestions')
       .getByText('Studio Wireless Headphones'),
   ).toBeVisible();
-  await expect(
-    page.locator('.category-suggestions').getByText('in Electronics'),
-  ).toBeVisible();
-  await page.locator('.campaign-copy').click();
-  await expect(page.locator('.search-panel')).toBeHidden();
-  await page
-    .locator('.commerce-search')
-    .getByLabel('Search all products')
-    .focus();
   await page
     .locator('.product-suggestions')
     .getByRole('link', { name: /Studio Wireless Headphones/ })
     .click();
-  await expect(page).toHaveURL(/studio-wireless-headphones/);
+  await expect(page).toHaveURL(/studio-wireless-headphones-aura-00001/);
 });
 
-test('homepage never creates horizontal page scroll', async ({ page }) => {
-  await page.goto('/');
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
-});
-
-test('each category card opens a specific category page with filters', async ({
+test('category filter is remote and empty results are explicit', async ({
   page,
 }) => {
-  await page.goto('/');
-  await page
-    .locator('.quick-categories')
-    .getByRole('link', { name: 'Electronics Upgrade your everyday' })
-    .click();
-  await expect(page).toHaveURL(/\/c\/electronics$/);
+  await page.goto('/c/electronics');
   await expect(
     page.getByRole('heading', { name: 'Electronics', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'Refine your finds' }),
-  ).toBeVisible();
+    page.locator('.category-product-grid .product-card'),
+  ).toHaveCount(4);
+  await page.getByLabel('Maximum price (₹)').fill('1');
   await expect(
-    page.getByRole('link', { name: 'View Studio Wireless Headphones' }),
+    page.getByRole('heading', { name: 'No products match these filters' }),
   ).toBeVisible();
-  await expect(page.getByText('4 products')).toBeVisible();
-  await page.getByRole('checkbox', { name: '4.8 stars & above' }).check();
-  await expect(page.getByText('2 products')).toBeVisible();
+  await page.getByRole('button', { name: 'Reset filters' }).click();
+  await expect(
+    page.locator('.category-product-grid .product-card'),
+  ).toHaveCount(4);
 });
 
-test('mobile category and product pages do not overflow', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/c/home-living');
+test('catalog failure has a retry state, never silently substitutes demo products', async ({
+  page,
+}) => {
+  await page.route('**/api/storefront/products?**', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: { message: 'The store is temporarily unavailable.' },
+      }),
+    }),
+  );
+  await page.goto('/');
+  await expect(page.locator('#discover').getByRole('alert')).toContainText(
+    'temporarily unavailable',
+  );
+  await expect(page.locator('#discover .product-card')).toHaveCount(0);
+  await page.unroute('**/api/storefront/products?**');
+  await page
+    .locator('#discover')
+    .getByRole('button', { name: 'Try again' })
+    .click();
+  await expect(page.locator('#discover .product-card')).toHaveCount(10);
+});
+
+test('same-origin proxy rejects tenant overrides and non-catalog paths', async ({
+  request,
+}) => {
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
-  await page.getByRole('link', { name: 'View Nordic Accent Chair' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Specifications' }),
-  ).toBeVisible();
+    (await request.get('/api/storefront/products?tenantCode=OTHER')).status(),
+  ).toBe(422);
+  expect((await request.get('/api/storefront/admin')).status()).toBe(404);
   expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
+    (await request.get('/api/storefront/products/not-a-real-product')).status(),
+  ).toBe(404);
+});
+
+test('home, category and detail fit small mobile, tablet and desktop screens', async ({
+  page,
+}, testInfo) => {
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of [
+      '/',
+      '/c/electronics',
+      '/p/studio-wireless-headphones-aura-00001',
+    ]) {
+      await page.goto(path);
+      await expect(page.locator('h1').first()).toBeVisible();
+      const cards = page.locator(
+        path === '/'
+          ? '#discover .category-product-grid .product-card'
+          : '.category-product-grid .product-card',
+      );
+      await expect(cards.first()).toBeVisible();
+      const cardSize = await cards.first().boundingBox();
+      expect(cardSize?.width).toBeGreaterThanOrEqual(140);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+      await page.screenshot({
+        path: testInfo.outputPath(
+          `${width}-${path === '/' ? 'home' : path.startsWith('/c/') ? 'category' : 'product'}.png`,
+        ),
+        fullPage: true,
+      });
+    }
+  }
 });

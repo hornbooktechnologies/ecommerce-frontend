@@ -9,11 +9,9 @@ import {
   Search,
   ShoppingBag,
   Heart,
-  MapPin,
   ChevronDown,
   ChevronRight,
   Sparkles,
-  X,
   Plus,
   Truck,
   ShieldCheck,
@@ -31,20 +29,16 @@ import {
   UserRound,
   Package,
 } from 'lucide-react';
-import {
-  categories,
-  products,
-  photo,
-  money,
-  slugify,
-  type Product,
-} from '@/features/storefront/data/catalog';
+import { photo, money, slugify } from '@/features/storefront/data/live-catalog';
+import { useCatalog } from '@/features/storefront/catalog-provider';
+import CatalogResults from './catalog-results';
 import { useStore } from '@/features/storefront/store';
-import ProductCard from '@/features/storefront/components/product-card';
 import MonthlyHero from '@/features/storefront/components/monthly-hero';
-import ReviewWall from '@/features/storefront/components/review-wall';
 import MarketplaceSections from '@/features/storefront/components/marketplace-sections';
 import SearchExperience from '@/features/storefront/components/search-experience';
+import customerNavigation from './customer-navigation.module.css';
+import { useCustomerSummary } from '../use-customer-summary';
+import DeliveryChecker from './delivery-checker';
 const icons = [
   Shirt,
   Headphones,
@@ -56,52 +50,30 @@ const icons = [
   BookOpen,
 ];
 export default function Storefront() {
+  const customer = useCustomerSummary();
+  const { categories, products } = useCatalog();
   const [category, setCategory] = useState('All categories'),
     [query, setQuery] = useState(''),
     [tab, setTab] = useState('Trending now'),
     [sort, setSort] = useState('popular'),
-    [panel, setPanel] = useState<'wishlist' | 'location' | null>(null),
-    [toast, setToast] = useState(''),
-    [location, setLocation] = useState('Select location'),
     [newsletter, setNewsletter] = useState(false),
     [menu, setMenu] = useState(false),
-    [headerMenu, setHeaderMenu] = useState<'account' | 'orders' | null>(null),
-    [showAll, setShowAll] = useState(false);
+    [headerMenu, setHeaderMenu] = useState<'account' | 'orders' | null>(null);
   const router = useRouter();
   const store = useStore();
-  const dialog = useRef<HTMLDialogElement>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     useStore.persist.rehydrate();
-    return () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
   }, []);
-  useEffect(() => {
-    if (panel) {
-      dialog.current?.showModal();
-    } else {
-      dialog.current?.close();
-    }
-  }, [panel]);
-  const notify = (s: string) => {
-    setToast(s);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(''), 3000);
-  };
-  const add = (p: Product) => {
-    store.add(p.id);
-    notify(`${p.name} added to your trolley`);
-  };
   const browse = (name: string) => {
     if (name !== 'All categories') {
-      router.push(`/c/${slugify(name)}`);
+      router.push(
+        `/c/${categories.find((item) => item.name.toLowerCase() === name.toLowerCase())?.slug || slugify(name)}`,
+      );
       return;
     }
     setCategory(name);
     setMenu(false);
-    setShowAll(true);
     setTimeout(
       () =>
         document
@@ -118,7 +90,7 @@ export default function Storefront() {
         .includes(query.toLowerCase()),
   );
   if (tab === 'New arrivals')
-    shown = shown.filter((p) => p.tag === 'NEW ARRIVAL' || p.id > 6);
+    shown = shown.filter((p) => p.tag === 'NEW ARRIVAL');
   if (tab === 'Best deals')
     shown = shown.filter((p) => (p.mrp - p.price) / p.mrp > 0.32);
   if (tab === 'Top rated') shown = shown.filter((p) => Number(p.rating) >= 4.8);
@@ -132,9 +104,6 @@ export default function Storefront() {
           : 0,
   );
   const count = Object.values(store.cart).reduce((a, b) => a + b, 0);
-  const close = () => {
-    setPanel(null);
-  };
   return (
     <>
       <div className="enhanced-search-slot">
@@ -147,20 +116,13 @@ export default function Storefront() {
         />
       </div>
       <header className="header">
-        <Link href="/" className="logo" aria-label="Aura Mall home">
+        <Link href="/" className="logo" aria-label="Hornbook Retail home">
           <span className="logo-symbol">a</span>
           <span>
-            AURA<span className="logo-mall">MALL</span>
+            HORNBOOK<span className="logo-mall">RETAIL</span>
           </span>
         </Link>
-        <button className="location" onClick={() => setPanel('location')}>
-          <MapPin size={19} />
-          <span>
-            <small>Deliver to</small>
-            {location}
-          </span>
-          <ChevronDown size={13} />
-        </button>
+        <DeliveryChecker />
         <div className="search">
           <select
             aria-label="Search category"
@@ -192,7 +154,7 @@ export default function Storefront() {
             <div className="search-suggestions">
               <small>{shown.length} matching products</small>
               {shown.slice(0, 4).map((p) => (
-                <Link key={p.id} href={`/p/${slugify(p.name)}`}>
+                <Link key={p.id} href={`/p/${p.slug}`}>
                   <img src={photo(p.image, 80)} alt="" />
                   <span>
                     {p.name}
@@ -217,35 +179,35 @@ export default function Storefront() {
           >
             <UserRound size={20} />
             <span>
-              <small>Hello, sign in</small>Account
+              <small>{customer.email ? `Hello, ${customer.firstName}` : 'Hello, sign in'}</small>Account
             </span>
             <ChevronDown size={12} />
           </button>
           {headerMenu === 'account' ? (
             <div className="header-popover account-popover">
-              <strong>Welcome to AURA</strong>
-              <p>Sign in to see your orders, saved addresses and rewards.</p>
+              <strong>Welcome to Hornbook Retail</strong>
+              <p>Manage your profile, password and saved addresses.</p>
               <button
                 className="popover-primary"
                 onClick={() => {
                   setHeaderMenu(null);
-                  notify('Sign-in experience is ready for the account phase');
+                  router.push(customer.email ? '/account' : '/account/login');
                 }}
               >
-                Sign in
+                {customer.email ? 'Your account' : 'Sign in'}
               </button>
-              <span>
+              {!customer.email && <span>
                 New customer?{' '}
                 <button
-                  onClick={() => notify('Account creation will open here')}
+                  onClick={() => router.push('/account/register')}
                 >
                   Create account
                 </button>
-              </span>
+              </span>}
               <hr />
-              <button>My profile</button>
-              <button onClick={() => setPanel('wishlist')}>My wishlist</button>
-              <button>AURA rewards</button>
+              <button onClick={() => router.push('/account')}>My profile & addresses</button>
+              <Link href="/account/orders" onClick={() => setHeaderMenu(null)}>My orders</Link>
+              <Link href="/wishlist">My wishlist</Link>
             </div>
           ) : null}
         </div>
@@ -266,25 +228,25 @@ export default function Storefront() {
           {headerMenu === 'orders' ? (
             <div className="header-popover orders-popover">
               <strong>Your purchases</strong>
-              <p>Track deliveries, download invoices or start a return.</p>
-              <button
+              <p>View your purchases and recorded fulfilment updates.</p>
+              <Link
                 className="popover-primary"
-                onClick={() => notify('Sign in to view your orders')}
+                href="/account/orders"
+                onClick={() => setHeaderMenu(null)}
               >
                 View all orders
-              </button>
+              </Link>
               <hr />
-              <button>Track a package</button>
-              <button>Returns & exchanges</button>
-              <button>Help with an order</button>
+              <Link href="/account/orders" onClick={() => setHeaderMenu(null)}>Track a package</Link>
             </div>
           ) : null}
         </div>
-        <button className="header-action" onClick={() => setPanel('wishlist')}>
+        <Link className={`header-action ${customerNavigation.desktopWishlist}`} href="/wishlist" aria-label={`Wishlist, ${store.wishlist.length} saved products`}>
           <Heart size={21} />
           <span>Wishlist</span>
           {store.wishlist.length > 0 && <b>{store.wishlist.length}</b>}
-        </button>
+        </Link>
+        <Link className={customerNavigation.mobileAccount} href="/account" aria-label="Your account"><UserRound size={20} /><span>Account</span></Link>
         <Link className="header-action trolley" href="/cart">
           <ShoppingBag size={21} />
           <span>Cart</span>
@@ -300,6 +262,7 @@ export default function Storefront() {
           >
             <Menu size={16} /> All categories <ChevronDown size={12} />
           </button>
+          <Link className={customerNavigation.mobileAccount} href="/wishlist" aria-label={`Wishlist, ${store.wishlist.length} saved products`}><Heart size={17} aria-hidden="true" /><span>Wishlist ({store.wishlist.length})</span></Link>
           <button onClick={() => browse('Fashion')}>Fashion</button>
           <button onClick={() => browse('Electronics')}>Electronics</button>
           <button onClick={() => browse('Home & Living')}>Home & Living</button>
@@ -325,7 +288,7 @@ export default function Storefront() {
         {menu && (
           <div className="category-menu">
             {categories.map((c, i) => {
-              const Icon = icons[i];
+              const Icon = icons[i] || ShoppingBag;
               return (
                 <button key={c.name} onClick={() => browse(c.name)}>
                   <Icon size={17} />
@@ -408,7 +371,10 @@ export default function Storefront() {
             <button
               className="room-pin pin-one"
               aria-label="Explore Nordic chair"
-              onClick={() => router.push(`/p/${slugify(products[2].name)}`)}
+              onClick={() =>
+                products[2] && router.push(`/p/${products[2].slug}`)
+              }
+              disabled={!products[2]}
             >
               <Plus size={16} />
             </button>
@@ -479,12 +445,12 @@ export default function Storefront() {
           </div>
           <div className="category-grid">
             {categories.map((c, i) => {
-              const Icon = icons[i];
+              const Icon = icons[i] || ShoppingBag;
               return (
                 <Link
                   className="category-card"
                   key={c.name}
-                  href={`/c/${slugify(c.name)}`}
+                  href={`/c/${c.slug}`}
                 >
                   <div
                     className="category-image"
@@ -513,17 +479,9 @@ export default function Storefront() {
                 <span>.</span>
               </h2>
             </div>
-            <button
-              className="text-button"
-              onClick={() => {
-                setCategory('All categories');
-                setTab('Trending now');
-                setQuery('');
-                setShowAll(true);
-              }}
-            >
-              View all products <ArrowRight size={16} />
-            </button>
+            <Link className="text-button" href="/products">
+              View all products <ArrowRight size={16} aria-hidden="true" />
+            </Link>
           </div>
           <div className="product-toolbar">
             <div className="tabs">
@@ -555,33 +513,24 @@ export default function Storefront() {
               <button onClick={() => setQuery('')}>Clear search</button>
             </p>
           )}
-          <div className="product-grid">
-            {shown
-              .slice(
-                0,
-                !showAll && category === 'All categories' && !query ? 5 : 20,
-              )
-              .map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-          </div>
-          {shown.length === 0 && (
-            <div className="empty-state">
-              <Search size={30} />
-              <h3>No finds just yet</h3>
-              <p>Try another search or explore a different category.</p>
-              <button
-                className="primary-button"
-                onClick={() => {
-                  setQuery('');
-                  setCategory('All categories');
-                  setTab('Trending now');
-                }}
-              >
-                Show all products
-              </button>
-            </div>
-          )}
+          <CatalogResults
+            filters={{
+              search: query,
+              category: categories.find((item) => item.name === category)?.slug,
+              sort:
+                sort === 'low'
+                  ? 'price_asc'
+                  : sort === 'high'
+                    ? 'price_desc'
+                    : sort === 'rating' || tab === 'Top rated'
+                      ? 'rating'
+                      : tab === 'New arrivals'
+                        ? 'newest'
+                        : 'featured',
+              minDiscount: tab === 'Best deals' ? 20 : undefined,
+              minRating: tab === 'Top rated' ? 4 : undefined,
+            }}
+          />
         </section>
         <section className="editorial-banner">
           <div>
@@ -605,7 +554,7 @@ export default function Storefront() {
           </div>
           <div className="editorial-art">
             <Sparkles size={110} strokeWidth={0.6} />
-            <span>THE AURA EDIT</span>
+            <span>THE HORNBOOK EDIT</span>
           </div>
           <span className="banner-number">01 / ∞</span>
         </section>
@@ -642,112 +591,22 @@ export default function Storefront() {
             )}
           </form>
         </section>
-        <ReviewWall />
       </main>
       <footer>
         <Link className="logo" href="/">
           <span className="logo-symbol">a</span>
           <span>
-            AURA<span className="logo-mall">MALL</span>
+            HORNBOOK<span className="logo-mall">RETAIL</span>
           </span>
         </Link>
         <p>A world of wonderful, all in one place.</p>
-        <span>© {new Date().getFullYear()} Aura Mall · Demo storefront</span>
+        <span>
+          © {new Date().getFullYear()} Hornbook Retail · Storefront preview
+        </span>
         <span className="footer-note">
           <ShieldCheck size={14} /> Thoughtfully made for everyday discovery
         </span>
       </footer>
-      {toast && (
-        <div className="toast" role="status">
-          <Check size={17} />
-          {toast}
-        </div>
-      )}
-      <dialog
-        ref={dialog}
-        onCancel={close}
-        onClick={(e) => {
-          if (e.target === dialog.current) close();
-        }}
-        className="modal"
-        aria-label={panel || 'Shopping dialog'}
-      >
-        <button
-          className="close-modal"
-          onClick={close}
-          aria-label="Close dialog"
-        >
-          <X size={21} />
-        </button>
-        {panel === 'location' && (
-          <>
-            <span className="eyebrow">A LITTLE CLOSER TO YOU</span>
-            <h2>Where are we delivering?</h2>
-            <p>Enter your Indian PIN code to personalise your visit.</p>
-            <form
-              className="stack-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const data = new FormData(e.currentTarget);
-                setLocation(String(data.get('pin')));
-                close();
-                notify(
-                  'Location saved. Availability is confirmed at checkout.',
-                );
-              }}
-            >
-              <input
-                name="pin"
-                aria-label="Six digit PIN code"
-                placeholder="6-digit PIN code"
-                pattern="[1-9][0-9]{5}"
-                inputMode="numeric"
-                maxLength={6}
-                required
-              />
-              <button className="primary-button">
-                Save location <ArrowRight size={17} />
-              </button>
-            </form>
-          </>
-        )}
-        {panel === 'wishlist' && (
-          <>
-            <span className="eyebrow">KEEP THE GOOD FINDS CLOSE</span>
-            <h2>
-              Your wishlist <span>({store.wishlist.length})</span>
-            </h2>
-            {!store.wishlist.length ? (
-              <div className="empty-state">
-                <Heart size={35} />
-                <h3>A little room for your favourites</h3>
-                <p>Tap the heart on a product to save it here.</p>
-              </div>
-            ) : (
-              products
-                .filter((p) => store.wishlist.includes(p.id))
-                .map((p) => (
-                  <div className="cart-item" key={p.id}>
-                    <img src={photo(p.image, 150)} alt={p.name} />
-                    <div>
-                      <strong>{p.name}</strong>
-                      <span>{money(p.price)}</span>
-                      <button onClick={() => add(p)}>
-                        Add to trolley <Plus size={13} />
-                      </button>
-                    </div>
-                    <button
-                      aria-label={`Remove ${p.name} from wishlist`}
-                      onClick={() => store.toggleWish(p.id)}
-                    >
-                      <X size={17} />
-                    </button>
-                  </div>
-                ))
-            )}
-          </>
-        )}
-      </dialog>
     </>
   );
 }

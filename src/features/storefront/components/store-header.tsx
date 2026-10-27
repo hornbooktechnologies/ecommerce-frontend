@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, MapPin, Search, ShoppingBag, UserRound } from 'lucide-react';
+import { Heart, Search, ShoppingBag, UserRound } from 'lucide-react';
+import DeliveryChecker from './delivery-checker';
 import { useStore } from '@/features/storefront/store';
+import { useCustomerSummary } from '../use-customer-summary';
 
 export default function StoreHeader() {
+  const customer = useCustomerSummary();
   const [accountOpen, setAccountOpen] = useState(false);
   const cart = useStore((state) => state.cart),
     wishlist = useStore((state) => state.wishlist);
@@ -20,14 +23,12 @@ export default function StoreHeader() {
       <Link href="/" className="logo">
         <span className="logo-symbol">a</span>
         <span>
-          AURA<span className="logo-mall">MALL</span>
+          HORNBOOK<span className="logo-mall">RETAIL</span>
         </span>
       </Link>
-      <span className="detail-location">
-        <MapPin size={16} /> Deliver to your location
-      </span>
+      <DeliveryChecker />
       <Link className="detail-search" href="/#discover">
-        <span>Search AURA Mall</span>
+        <span>Search Hornbook Retail</span>
         <Search size={19} />
       </Link>
       <nav>
@@ -46,22 +47,21 @@ export default function StoreHeader() {
           </button>
           {accountOpen ? (
             <div className="header-popover detail-account-popover">
-              <strong>Your AURA account</strong>
-              <p>Sign in to manage orders, addresses and saved products.</p>
-              <Link className="popover-primary" href="/">
+              <strong>{customer.email ? `Hello, ${customer.firstName}` : 'Your Hornbook account'}</strong>
+              <p>Manage your profile, password and delivery addresses.</p>
+              <Link className="popover-primary" href="/account">
                 Go to account
               </Link>
               <hr />
-              <Link href="/#discover">Your orders</Link>
-              <Link href="/#discover">Wishlist</Link>
-              <Link href="/#discover">Help centre</Link>
+              <Link href="/account/orders" onClick={() => setAccountOpen(false)}>My orders</Link>
+              {!customer.email && <><Link href="/account/login">Sign in</Link><Link href="/account/register">Create account</Link></>}
             </div>
           ) : null}
         </div>
-        <span aria-label={`${wishlist.length} wishlist items`}>
+        <Link href="/wishlist" aria-label={`Wishlist, ${wishlist.length} saved products`}>
           <Heart size={19} />
           <b>{wishlist.length}</b>
-        </span>
+        </Link>
         <Link
           className="detail-cart-link"
           href="/cart"

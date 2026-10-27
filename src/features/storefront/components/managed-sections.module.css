@@ -1,0 +1,13 @@
+.banner:global(.fashion-banner) { height: auto; min-height: 320px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.banner:global(.fashion-banner) > div:first-child { width: auto; height: auto; min-width: 0; position: relative; inset: auto; padding: clamp(24px, 4vw, 64px); }
+.banner:global(.fashion-banner)::after { display: none; }
+.banner:global(.fashion-banner) > img { width: 100%; height: 100%; position: absolute; inset: 0 0 0 auto; max-width: 50%; object-fit: cover; }
+.banner h2, .banner p, .banner a, .shelf h2 { overflow-wrap: anywhere; }
+.banner:global(.fashion-banner) h2 { font-size: clamp(26px, 3vw, 44px); }
+.banner:global(.fashion-banner) p { font-size: 14px; line-height: 1.6; }
+.banner:global(.fashion-banner) .badge { display: inline-block; background: #fff8e1; color: #46391f; padding: 8px 14px; border-radius: 6px; margin-top: 18px; font-weight: 700; max-width: 100%; }
+.shelf { min-width: 0; }
+@media (max-width: 700px) {
+  .banner:global(.fashion-banner) { grid-template-columns: minmax(0, 1fr); }
+  .banner:global(.fashion-banner) > img { position: static; max-width: 100%; height: auto; aspect-ratio: 4 / 3; }
+}

@@ -30,5 +30,5 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 *.tsbuildinfo
-.env.example
 package-lock.json
+.env.example

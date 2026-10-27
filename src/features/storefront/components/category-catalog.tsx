@@ -1,32 +1,16 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
-import ProductCard from '@/features/storefront/components/product-card';
-import type { Product } from '@/features/storefront/data/catalog';
+import { useCatalog } from '../catalog-provider';
+import CatalogResults from './catalog-results';
 
-export default function CategoryCatalog({ products }: { products: Product[] }) {
-  const [sort, setSort] = useState('featured');
-  const [maxPrice, setMaxPrice] = useState(15000);
-  const [onlyTopRated, setOnlyTopRated] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const visible = useMemo(
-    () =>
-      products
-        .filter(
-          (p) =>
-            p.price <= maxPrice && (!onlyTopRated || Number(p.rating) >= 4.8),
-        )
-        .sort((a, b) =>
-          sort === 'low'
-            ? a.price - b.price
-            : sort === 'high'
-              ? b.price - a.price
-              : sort === 'rating'
-                ? Number(b.rating) - Number(a.rating)
-                : a.id - b.id,
-        ),
-    [products, maxPrice, onlyTopRated, sort],
-  );
+export default function CategoryCatalog({ category }: { category: string }) {
+  const { brands } = useCatalog();
+  const [sort, setSort] = useState('featured'),
+    [brand, setBrand] = useState(''),
+    [maxPrice, setMaxPrice] = useState('');
+  const [onlyInStock, setOnlyInStock] = useState(false),
+    [filtersOpen, setFiltersOpen] = useState(false);
   return (
     <div className="category-catalog">
       <button
@@ -45,69 +29,79 @@ export default function CategoryCatalog({ products }: { products: Product[] }) {
         </button>
         <h3>Refine your finds</h3>
         <div className="filter-group">
-          <label>
-            Maximum price <strong>₹{maxPrice.toLocaleString('en-IN')}</strong>
-          </label>
+          <label htmlFor="catalog-brand">Brand</label>
+          <select
+            id="catalog-brand"
+            value={brand}
+            onChange={(event) => setBrand(event.target.value)}
+          >
+            <option value="">All brands</option>
+            {brands.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label htmlFor="catalog-price">Maximum price (₹)</label>
           <input
-            type="range"
-            min="500"
-            max="15000"
-            step="500"
+            id="catalog-price"
+            type="number"
+            min="0"
             value={maxPrice}
-            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            onChange={(event) => setMaxPrice(event.target.value)}
+            placeholder="No limit"
           />
         </div>
         <div className="filter-group">
           <label className="check-filter">
             <input
               type="checkbox"
-              checked={onlyTopRated}
-              onChange={(e) => setOnlyTopRated(e.target.checked)}
+              checked={onlyInStock}
+              onChange={(event) => setOnlyInStock(event.target.checked)}
             />{' '}
-            4.8 stars & above
+            In stock only
           </label>
         </div>
-        <div className="filter-group">
-          <span>Shopping promises</span>
-          <p>✓ Authentic products</p>
-          <p>✓ Easy 7-day returns</p>
-          <p>✓ Secure demo checkout</p>
-        </div>
+        <button
+          className="outline-button"
+          onClick={() => {
+            setBrand('');
+            setMaxPrice('');
+            setOnlyInStock(false);
+          }}
+        >
+          Reset filters
+        </button>
       </aside>
       <section className="category-results">
         <div className="results-toolbar">
-          <p>
-            <strong>{visible.length}</strong> products
-          </p>
+          <h2>Shop the collection</h2>
           <label>
             Sort by{' '}
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+            >
               <option value="featured">Featured</option>
-              <option value="low">Price: low to high</option>
-              <option value="high">Price: high to low</option>
+              <option value="newest">Newest</option>
+              <option value="price_asc">Price: low to high</option>
+              <option value="price_desc">Price: high to low</option>
               <option value="rating">Highest rated</option>
             </select>
           </label>
         </div>
-        <div className="category-product-grid">
-          {visible.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-        {visible.length === 0 ? (
-          <div className="empty-state">
-            <h3>No products match these filters</h3>
-            <button
-              className="outline-button"
-              onClick={() => {
-                setMaxPrice(15000);
-                setOnlyTopRated(false);
-              }}
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : null}
+        <CatalogResults
+          filters={{
+            category,
+            brand,
+            maxPrice:
+              maxPrice === '' ? undefined : Math.max(0, Number(maxPrice)),
+            inStock: onlyInStock,
+            sort,
+          }}
+        />
       </section>
     </div>
   );

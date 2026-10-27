@@ -1,6 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -12,13 +12,11 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
+import { money, photo } from '@/features/storefront/data/live-catalog';
 import {
-  categories,
-  money,
-  photo,
-  products,
-  slugify,
-} from '@/features/storefront/data/catalog';
+  useCatalog,
+  useCatalogQuery,
+} from '@/features/storefront/catalog-provider';
 
 const STORAGE_KEY = 'aura-recent-searches-v1';
 const popular = [
@@ -59,6 +57,12 @@ export default function SearchExperience({
   setCategory: (value: string) => void;
   onShowAll: () => void;
 }) {
+  const { categories } = useCatalog();
+  const results = useCatalogQuery({
+    search: query,
+    category: categories.find((item) => item.name === category)?.slug,
+    pageSize: 6,
+  });
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -88,29 +92,7 @@ export default function SearchExperience({
       document.removeEventListener('pointerdown', outside);
     };
   }, []);
-  const matches = useMemo(
-    () =>
-      products
-        .map((product) => ({
-          product,
-          score: score(
-            `${product.name} ${product.brand} ${product.category}`,
-            query,
-          ),
-        }))
-        .filter(
-          (item) =>
-            item.score > 0 &&
-            (category === 'All categories' ||
-              item.product.category === category),
-        )
-        .sort(
-          (a, b) => b.score - a.score || b.product.reviews - a.product.reviews,
-        )
-        .slice(0, 6)
-        .map((item) => item.product),
-    [query, category],
-  );
+  const matches = results.data?.items || [];
   const categoryMatches = categories
     .filter(
       (item) =>
@@ -276,7 +258,7 @@ export default function SearchExperience({
             <section className="suggestion-group category-suggestions">
               <h3>SHOP BY CATEGORY</h3>
               {categoryMatches.map((item) => (
-                <Link key={item.name} href={`/c/${slugify(item.name)}`}>
+                <Link key={item.name} href={`/c/${item.slug}`}>
                   <span>
                     <Search size={13} />
                     {query || item.name} <small>in {item.name}</small>
@@ -292,7 +274,7 @@ export default function SearchExperience({
                 TOP PRODUCT MATCHES <small>{matches.length} found</small>
               </h3>
               {matches.map((product) => {
-                const href = `/p/${slugify(product.name)}`;
+                const href = `/p/${product.slug}`;
                 return (
                   <Link
                     href={href}
@@ -316,7 +298,14 @@ export default function SearchExperience({
                   </Link>
                 );
               })}
-              {matches.length === 0 ? (
+              {results.loading && <p role="status">Searching products…</p>}
+              {results.error && (
+                <p role="alert">
+                  {results.error}{' '}
+                  <button onClick={results.retry}>Try again</button>
+                </p>
+              )}
+              {!results.loading && !results.error && matches.length === 0 ? (
                 <div className="no-suggestions">
                   <Search size={22} />
                   <span>

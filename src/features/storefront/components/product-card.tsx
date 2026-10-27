@@ -5,16 +5,15 @@ import { Heart, Plus, Star } from 'lucide-react';
 import {
   money,
   photo,
-  slugify,
   type Product,
-} from '@/features/storefront/data/catalog';
+} from '@/features/storefront/data/live-catalog';
 import { useStore } from '@/features/storefront/store';
 
 export default function ProductCard({ product }: { product: Product }) {
-  const add = useStore((state) => state.add);
   const toggleWish = useStore((state) => state.toggleWish);
   const saved = useStore((state) => state.wishlist.includes(product.id));
-  const href = `/p/${slugify(product.name)}`;
+  const wishBusy = useStore((state) => state.wishBusy);
+  const href = `/p/${product.slug}`;
   return (
     <article className="product-card">
       <div className="product-image" style={{ background: product.color }}>
@@ -39,30 +38,41 @@ export default function ProductCard({ product }: { product: Product }) {
         <button
           className={`wish-button ${saved ? 'saved' : ''}`}
           aria-label={`${saved ? 'Remove from' : 'Add to'} wishlist: ${product.name}`}
-          onClick={() => toggleWish(product.id)}
+          aria-pressed={saved}
+          disabled={wishBusy}
+          onClick={() => toggleWish(product)}
         >
           <Heart size={17} fill={saved ? 'currentColor' : 'none'} />
         </button>
-        <button className="quick-add" onClick={() => add(product.id)}>
-          <Plus size={15} /> Add to trolley
-        </button>
+        <Link className="quick-add" href={href}>
+          <Plus size={15} />{' '}
+          {product.inStock ? 'Choose options' : 'View unavailable item'}
+        </Link>
       </div>
       <div className="product-info">
         <small>{product.brand}</small>
         <Link prefetch className="product-title" href={href}>
           {product.name}
         </Link>
-        <div className="rating">
-          <Star size={12} fill="currentColor" />{' '}
-          <strong>{product.rating}</strong>
-          <span>({product.reviews})</span>
-        </div>
+        {product.reviews > 0 ? (
+          <div className="rating">
+            <Star size={12} fill="currentColor" />{' '}
+            <strong>{product.rating}</strong>
+            <span>({product.reviews})</span>
+          </div>
+        ) : (
+          <div className="rating rating-empty">No reviews yet</div>
+        )}
         <div className="price">
           <strong>{money(product.price)}</strong>
-          <del>{money(product.mrp)}</del>
-          <span>
-            {Math.round((1 - product.price / product.mrp) * 100)}% off
-          </span>
+          {product.mrp > product.price && (
+            <>
+              <del>{money(product.mrp)}</del>
+              <span>
+                {Math.round((1 - product.price / product.mrp) * 100)}% off
+              </span>
+            </>
+          )}
         </div>
       </div>
     </article>
