@@ -5,6 +5,7 @@ import { Heart, Search, ShoppingBag, UserRound } from 'lucide-react';
 import DeliveryChecker from './delivery-checker';
 import { useStore } from '@/features/storefront/store';
 import { useCustomerSummary } from '../use-customer-summary';
+import CustomerInbox from './customer-inbox';
 
 export default function StoreHeader() {
   const customer = useCustomerSummary();
@@ -37,6 +38,7 @@ export default function StoreHeader() {
         <Link href="/#discover">Deals</Link>
       </nav>
       <div className="detail-actions">
+        <CustomerInbox customerId={customer.id} />
         <div className="header-menu-wrap">
           <button
             aria-label="Account menu"

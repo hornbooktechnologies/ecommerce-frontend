@@ -39,6 +39,8 @@ import SearchExperience from '@/features/storefront/components/search-experience
 import customerNavigation from './customer-navigation.module.css';
 import { useCustomerSummary } from '../use-customer-summary';
 import DeliveryChecker from './delivery-checker';
+import headerStyles from './homepage-header.module.css';
+import CustomerInbox from './customer-inbox';
 const icons = [
   Shirt,
   Headphones,
@@ -106,16 +108,7 @@ export default function Storefront() {
   const count = Object.values(store.cart).reduce((a, b) => a + b, 0);
   return (
     <>
-      <div className="enhanced-search-slot">
-        <SearchExperience
-          query={query}
-          setQuery={setQuery}
-          category={category}
-          setCategory={setCategory}
-          onShowAll={() => browse(category)}
-        />
-      </div>
-      <header className="header">
+      <header className={`header ${headerStyles.header}`}>
         <Link href="/" className="logo" aria-label="Hornbook Retail home">
           <span className="logo-symbol">a</span>
           <span>
@@ -123,6 +116,15 @@ export default function Storefront() {
           </span>
         </Link>
         <DeliveryChecker />
+        <div className="enhanced-search-slot">
+          <SearchExperience
+            query={query}
+            setQuery={setQuery}
+            category={category}
+            setCategory={setCategory}
+            onShowAll={() => browse(category)}
+          />
+        </div>
         <div className="search">
           <select
             aria-label="Search category"
@@ -247,6 +249,7 @@ export default function Storefront() {
           {store.wishlist.length > 0 && <b>{store.wishlist.length}</b>}
         </Link>
         <Link className={customerNavigation.mobileAccount} href="/account" aria-label="Your account"><UserRound size={20} /><span>Account</span></Link>
+        <CustomerInbox customerId={customer.id} />
         <Link className="header-action trolley" href="/cart">
           <ShoppingBag size={21} />
           <span>Cart</span>

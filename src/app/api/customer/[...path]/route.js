@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { inboxProxyRoute } from '@/lib/customer-inbox';
 
 const cookieName = 'commerce_customer';
 const cartCookieName = 'commerce_guest_cart';
@@ -16,13 +17,14 @@ const jsonError = (message, status) => NextResponse.json({ error: { message } },
 async function handler(request, context) {
   const { path } = await context.params;
   const key = path.join('/');
+  const inboxRoute = inboxProxyRoute(path, request.method, request.nextUrl.search);
   const isCheckout = path.length === 2 && path[0] === 'checkout' && ['options', 'quote', 'place', 'read', 'pay', 'verify'].includes(path[1]);
   const isOrders = path.length === 2 && path[0] === 'orders' && ['list', 'read', 'invoice', 'review', 'after-sales', 'cancel', 'return'].includes(path[1]);
   const isInvoice = key === 'orders/invoice';
   const methods = isOrders || isCheckout || key === 'cart/sync' || key === 'wishlist/sync' ? ['POST'] : path.length === 1 ? routes[key] : path.length === 2 && path[0] === 'addresses' && /^[0-9a-f-]{36}$/i.test(path[1]) ? ['PUT', 'DELETE'] : null;
   const isCart = path[0] === 'cart';
   const isWishlist = path[0] === 'wishlist';
-  if (!methods?.includes(request.method) || request.nextUrl.search) return jsonError('Not found.', 404);
+  if (!inboxRoute && (!methods?.includes(request.method) || request.nextUrl.search)) return jsonError('Not found.', 404);
   if (request.method !== 'GET' && (request.headers.get('origin') !== request.nextUrl.origin || request.headers.get('content-type')?.split(';')[0] !== 'application/json')) {
     return jsonError('This request could not be verified. Reload the page and try again.', 403);
   }
@@ -49,7 +51,7 @@ async function handler(request, context) {
     const token = request.cookies.get(cookieName)?.value;
     const guestToken = request.cookies.get(cartCookieName)?.value;
     const wishlistToken = request.cookies.get(wishlistCookieName)?.value;
-    const upstream = await fetch(`${origin}/${tenant}/stores/${store}/${isCart || isCheckout || isWishlist ? '' : 'account/'}${path.map(encodeURIComponent).join('/')}`, {
+    const upstream = await fetch(`${origin}/${tenant}/stores/${store}/${isCart || isCheckout || isWishlist ? '' : 'account/'}${path.map(encodeURIComponent).join('/')}${inboxRoute?.query || ''}`, {
       method: request.method, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(30000),
       headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isCart && guestToken ? { 'x-cart-token': guestToken } : {}), ...(isWishlist && wishlistToken ? { 'x-wishlist-token': wishlistToken } : {}) }, body,
     });
@@ -88,3 +90,4 @@ export const GET = handler;
 export const POST = handler;
 export const PUT = handler;
 export const DELETE = handler;
+export const PATCH = handler;

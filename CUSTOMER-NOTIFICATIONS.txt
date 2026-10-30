@@ -1,0 +1,75 @@
+HORNBOOK RETAIL - CUSTOMER NOTIFICATIONS
+Phase 4 | 29 October 2026
+
+WHAT IS AVAILABLE
+Signed-in customers now have a notification bell on the homepage and the shared
+storefront header (account, orders, product, cart and other pages using it).
+Guests do not see a private inbox. The current customer session is required.
+
+Open the bell for:
+  - All / Unread filters and 10 updates per page.
+  - Individual read/unread controls, persisted by the API.
+  - Mark all read, using a snapshot cutoff so newer deliveries stay unread.
+  - Order links, and return/exchange links to the order's after-sales section.
+  - Retry, empty and expired-session states.
+
+The same supported events from Phase 2 are used: order received/cancelled,
+shipment dispatched/delivered and the existing return/exchange lifecycle hooks.
+Notifications are not proof of payment. Historical activity is not backfilled.
+Unsupported target types are shown without a record link; destination APIs
+continue to enforce ownership.
+
+HOW TO USE
+1. Keep the backend API and storefront running normally.
+2. In a separate terminal in D:\Global-ecommerce\ecommerce-backend, run:
+     npm run notifications:inbox
+   This is the existing delivery worker, not a newly installed Windows service.
+3. Sign in to the storefront as a customer and place an order or perform another
+   supported action. After delivery by the worker, the unread bell refreshes.
+4. To inspect pending delivery without processing it, run:
+     npm run notifications:inbox:status
+
+Polling runs every 30 seconds only while the tab is visible, and on focus.
+Closed panels fetch only the unread count. Open panels fetch the current page.
+Explicit read-state actions use Sonner feedback inside the native dialog.
+Initial history and background polling do not generate repeated toast popups.
+Other tabs are notified of read-state changes; account changes clear the inbox.
+
+SECURITY AND UX
+The same-origin customer proxy forwards only approved notification routes and
+bounded list filters. Mutations retain the existing origin/JSON checks.
+The HTTP-only customer cookie stays server-side; the browser does not receive
+or store a bearer token. Inbox payloads are not stored in local/session storage.
+Responses are no-store. Requests are cancelled on unmount/account changes and
+old responses cannot populate a new account's inbox.
+
+Design: existing paper/olive storefront palette, a divided readable list,
+visible keyboard focus, a native top-layer dialog and short entrance/exit motion.
+The page is locked while the list scrolls; header/footer remain reachable.
+Escape closes the panel and restores focus to the bell. Reduced motion is
+supported. No new dependency, browser-push permission, email provider or service.
+
+VERIFICATION
+Frontend lint, type check and production build passed.
+Browser regression suite covers list pagination, read persistence across reload,
+unread filtering, mark-all cutoff, safe links, keyboard wrapping/Escape,
+failure/retry, empty/expired states and delayed account-switch responses.
+Responsive checks cover 320, 375, 768, 844 landscape and 1440 pixels, plus
+the existing homepage header/search checks.
+
+A separate browser check ran the actual customer proxy handler (only import
+aliases resolved for the harness), Express routes and MariaDB DAOs using a
+temporary customer and order. A real order event was delivered by the inbox
+worker function. Verified read persistence, mark-all, no-session 401 and unknown
+notification 404. All database fixtures were rolled back and removal confirmed;
+no real order/customer data was changed and no email was sent.
+The browser transport and authentication were supplied by the isolated harness;
+this is not a claim that a real customer's login or hosted deployment was tested.
+
+Regression tests: tests/customer-notifications.spec.js
+Local end-to-end harness: D:\E-commerce\tmp\customer-inbox\verify-database.mjs
+
+NEXT
+Phase 5: guided product setup to simplify catalog entry for everyday users.
+Expanded stock, payment, warranty, approval/import and platform notification
+producers, browser push and notification preferences remain separate work.

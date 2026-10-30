@@ -1,0 +1,62 @@
+/* Keep search in the header's layout instead of covering neighbouring actions. */
+.header:global(.header) {
+  height: auto;
+  min-height: 72px;
+  padding: 10px 3%;
+  gap: 16px;
+}
+
+.header > :global(.logo),
+.header > button[aria-haspopup='dialog'] {
+  flex-shrink: 0;
+}
+
+.header > :global(.enhanced-search-slot) {
+  position: relative;
+  inset: auto;
+  order: 0;
+  flex: 1 1 280px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: 44px;
+}
+
+.header :global(.search-panel) {
+  position: absolute;
+  inset: calc(100% + 8px) 0 auto;
+  max-height: 70dvh;
+}
+
+@media (max-width: 1350px) {
+  .header:global(.header) {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .header > :global(.enhanced-search-slot) {
+    order: 10;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 1100px) {
+  .header > button[aria-haspopup='dialog'] {
+    order: 11;
+    flex: 0 0 100%;
+    border-top-color: #ffffff26;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .header:global(.header) {
+    min-height: 0;
+    padding: 10px 4%;
+    gap: 8px;
+  }
+
+  .header > :global(.enhanced-search-slot) {
+    height: 40px;
+  }
+}
