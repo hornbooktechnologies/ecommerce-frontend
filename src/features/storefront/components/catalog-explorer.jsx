@@ -1,0 +1,134 @@
+'use client';
+
+import { Suspense, useEffect, useId, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { SlidersHorizontal, X } from 'lucide-react';
+import { catalogRequest, useCatalog } from '../catalog-provider';
+import CatalogResults from './catalog-results';
+import styles from './catalog-explorer.module.css';
+
+const keys = ['search','category','brand','brands','colors','sizes','minPrice','maxPrice','minRating','minDiscount','inStock','sort'];
+const ids = (value = '') => [...new Set(value.split(',').filter(Boolean))];
+const labels = { brands:'Brand', colors:'Colour', sizes:'Size', search:'Search', category:'Category', minPrice:'Minimum price', maxPrice:'Maximum price', minRating:'Rating', minDiscount:'Discount', inStock:'In stock', sort:'Sort' };
+
+export default function CatalogExplorer({ category = '' }) {
+  return <Suspense fallback={<p role="status">Loading collection filters...</p>}><Explorer category={category} /></Suspense>;
+}
+
+function Explorer({ category }) {
+  const params = useSearchParams(), pathname = usePathname();
+  const { categories, brands: allBrands } = useCatalog();
+  const resultHeading = useRef(null), disclosure = useRef(null);
+  const [attempt, setAttempt] = useState(0), [facetResult, setFacetResult] = useState(null);
+  const filters = Object.fromEntries(keys.filter((key) => params.has(key)).map((key) => [key, params.get(key)]));
+  if (category) filters.category = category;
+  const activeCategory = filters.category || '', search = filters.search || '';
+  const facetKey = new URLSearchParams({category:activeCategory,search}).toString();
+  useEffect(() => {
+    const controller = new AbortController();
+    catalogRequest(`facets?${facetKey}`,controller.signal)
+      .then(data => setFacetResult({key:facetKey,attempt,data}))
+      .catch(error => { if (!controller.signal.aborted) setFacetResult({key:facetKey,attempt,error:error.message}); });
+    return () => controller.abort();
+  },[facetKey,attempt]);
+  const current = facetResult?.key === facetKey && facetResult.attempt === attempt ? facetResult : null;
+  const facets = current?.data;
+  const parsedPage = Number(params.get('page') || 1);
+  const page = Number.isInteger(parsedPage) && parsedPage >= 1 && parsedPage <= 10000 ? parsedPage : 1;
+  function navigate(next) {
+    const query = next.toString();
+    window.history.pushState(null,'',`${pathname}${query ? `?${query}` : ''}`);
+  }
+  function update(key,value) {
+    const next = new URLSearchParams(params.toString()); next.delete('page');
+    if (value) next.set(key,value); else next.delete(key);
+    navigate(next);
+  }
+  function reset() {
+    navigate(new URLSearchParams());
+  }
+  const chips = [];
+  for (const key of keys) {
+    if (key === 'category' && category || key === 'sort' || key === 'brand') continue;
+    const value = filters[key];
+    if (!value || value === 'false' || value === '0') continue;
+    if (['brands','colors','sizes'].includes(key)) {
+      for (const id of ids(value)) {
+        const item = (facets?.[key] || (key === 'brands' ? allBrands : [])).find(option=>option.id === id);
+        chips.push({key:`${key}-${id}`,text:`${labels[key]}: ${item?.name || id.slice(0,8)}`,remove:()=>update(key,ids(value).filter(item=>item!==id).join(','))});
+      }
+    } else chips.push({key,text:`${labels[key]}: ${key==='category' ? categories.find(item=>item.slug===value)?.name || value : key==='inStock' ? 'Only' : value}`,remove:()=>update(key,'')});
+  }
+  if (filters.brand) chips.push({key:'brand',text:`Brand: ${allBrands.find(item=>item.id===filters.brand)?.name || filters.brand.slice(0,8)}`,remove:()=>update('brand','')});
+  return <div className={styles.layout}>
+    <aside className={styles.sidebar} aria-label="Product filters">
+      <details open ref={disclosure} className={styles.disclosure}>
+        <summary><SlidersHorizontal size={18} aria-hidden="true" />Refine your finds</summary>
+        <FilterForm key={params.toString()} filters={filters} category={category} facets={facets} categories={categories} loading={!current}
+          error={current?.error} retry={()=>setAttempt(value=>value+1)} reset={reset}
+          apply={(next)=>{ navigate(next); if (window.matchMedia('(max-width: 800px)').matches) disclosure.current.open=false; resultHeading.current?.focus(); }} />
+      </details>
+    </aside>
+    <section className={`category-results ${styles.results}`} aria-label="Product results">
+      <div className={styles.toolbar}>
+        <h2 ref={resultHeading} tabIndex={-1}>Shop the collection</h2>
+        <label>Sort by<select value={filters.sort || 'featured'} onChange={event=>update('sort',event.target.value)}>
+          <option value="featured">Featured</option><option value="newest">Newest</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="rating">Highest rated</option><option value="discount">Biggest discount</option>
+        </select></label>
+      </div>
+      {chips.length > 0 && <div className={styles.chips} aria-label="Applied filters">
+        {chips.map(chip=><button type="button" key={chip.key} onClick={chip.remove} aria-label={`Remove ${chip.text}`}>{chip.text}<X size={14} aria-hidden="true" /></button>)}
+        <button type="button" onClick={reset}>Clear all</button>
+      </div>}
+      <CatalogResults filters={filters} currentPage={page} onPageChange={nextPage=>{const next=new URLSearchParams(params.toString());next.set('page',String(nextPage));navigate(next);resultHeading.current?.focus();}} />
+    </section>
+  </div>;
+}
+
+function FilterForm({filters,category,facets,categories,loading,error,retry,reset,apply}) {
+  const id = useId(), [message,setMessage] = useState('');
+  function submit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget), next = new URLSearchParams();
+    const min = form.get('minPrice'), max = form.get('maxPrice');
+    if (min !== '' && max !== '' && Number(min) > Number(max)) {setMessage('Minimum price cannot exceed maximum price.');return;}
+    for (const key of ['brands','colors','sizes']) {
+      const values = form.getAll(key);
+      if (values.length > 30) {setMessage(`Choose up to 30 ${labels[key].toLowerCase()} options.`);return;}
+      if(values.length) next.set(key,[...new Set(values)].join(','));
+    }
+    for(const key of ['search','category','minPrice','maxPrice','minRating','minDiscount','inStock']) {
+      const value = form.get(key); if(value && value !== '0') next.set(key,String(value).trim());
+    }
+    if(filters.sort) next.set('sort',filters.sort);
+    apply(next);
+  }
+  return <form className={styles.form} onSubmit={submit}>
+    <label className={styles.field}>Search products<input type="search" name="search" maxLength={190} defaultValue={filters.search || ''} placeholder="Name, brand or SKU" /></label>
+    {category ? <input type="hidden" name="category" value={category} /> : <label className={styles.field}>Category<select name="category" defaultValue={filters.category || ''}><option value="">All categories</option>{categories.map(item=><option key={item.id} value={item.slug}>{item.name}</option>)}</select></label>}
+    <p className={styles.note}>Option counts show products in this search and category, before applying other filters. Changes apply when you select Apply filters.</p>
+    {loading && <p role="status">Loading brand, colour and size options...</p>}
+    {error && <p role="alert">{error} <button type="button" onClick={retry}>Retry options</button></p>}
+    {['brands','colors','sizes'].map(key=>{
+      const selected = ids([filters[key] || '',key==='brands' ? filters.brand || '' : ''].filter(Boolean).join(','));
+      const options = [...(facets?.[key] || [])];
+      for(const selectedId of selected) if(!options.some(item=>item.id===selectedId)) options.push({id:selectedId,name:`Selected ${labels[key].toLowerCase()} (${selectedId.slice(0,8)})`,count:0});
+      return options.length ? <fieldset key={key} className={styles.group}><legend>{key==='brands' ? 'Brands' : key==='colors' ? 'Colours' : 'Sizes'}</legend>
+        <div className={styles.options}>{options.map(item=><label key={item.id} className={styles.option}>
+          <input type="checkbox" name={key} value={item.id} defaultChecked={selected.includes(item.id)} />
+          {key==='colors' && /^#[\da-f]{6}$/i.test(item.swatchValue || '') && <span aria-hidden="true" className={styles.swatch} style={{backgroundColor:item.swatchValue}} />}
+          <span>{item.name}</span><small>{item.count}</small>
+        </label>)}</div>
+      </fieldset> : null;
+    })}
+    <fieldset className={styles.group}><legend>Price range (INR)</legend><div className={styles.price}>
+      <label htmlFor={`${id}-min`}>Minimum<input id={`${id}-min`} type="number" name="minPrice" min="0" max="1000000000000" step="0.01" defaultValue={filters.minPrice || ''} placeholder="0" /></label>
+      <label htmlFor={`${id}-max`}>Maximum<input id={`${id}-max`} type="number" name="maxPrice" min="0" max="1000000000000" step="0.01" defaultValue={filters.maxPrice || ''} placeholder="No limit" /></label>
+    </div></fieldset>
+    <label className={styles.field}>Minimum rating<select name="minRating" defaultValue={filters.minRating || '0'}><option value="0">Any rating</option>{[1,2,3,4,5].map(value=><option key={value} value={value}>{value} stars &amp; above</option>)}</select></label>
+    <label className={styles.field}>Minimum discount<select name="minDiscount" defaultValue={filters.minDiscount || '0'}><option value="0">Any discount</option>{[10,20,30,40,50,60,70].map(value=><option key={value} value={value}>{value}% &amp; above</option>)}</select></label>
+    <label className={styles.option}><input type="checkbox" name="inStock" value="true" defaultChecked={filters.inStock==='true'} /><span>In stock only</span></label>
+    {message && <p role="alert" className={styles.error}>{message}</p>}
+    <div className={styles.actions}><button type="submit">Apply filters</button><button type="button" onClick={event=>{event.currentTarget.form.reset();setMessage('');reset();}}>Reset filters</button></div>
+  </form>;
+}

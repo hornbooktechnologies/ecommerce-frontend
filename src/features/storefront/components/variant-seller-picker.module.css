@@ -1,0 +1,29 @@
+.picker { display: grid; gap: 22px; min-width: 0; color: var(--ink); }
+.axis,.sellers { border: 0; padding: 0; margin: 0; min-width: 0; }
+.axis legend,.sellers legend { font-size: calc((15px) * var(--theme-text-scale, 1)); font-weight: 700; line-height: 1.6; padding: 0; margin-bottom: 10px; }
+.axis legend strong { margin-left: 8px; font-weight: 400; }
+.choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.choices button { min-width: 48px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: calc(8px * var(--theme-radius-scale, 1)); font: inherit; font-size: calc((14px) * var(--theme-text-scale, 1)); color: var(--ink); background: var(--paper); cursor: pointer; transition: border-color 160ms ease,background-color 160ms ease; }
+.choices button[aria-pressed="true"] { border-color: var(--olive); background: var(--soft); box-shadow: inset 0 0 0 1px var(--olive); font-weight: 700; }
+.choices button.colourChoice { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.choices button.colourChoice[data-swatch] { background: var(--swatch-fill); color: var(--swatch-ink); border-color: var(--swatch-ink); }
+.choices button.colourChoice[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+.colourCheck { flex-shrink: 0; visibility: hidden; }
+.colourChoice[aria-pressed="true"] .colourCheck { visibility: visible; }
+.configuration { display: grid; gap: 10px; font-weight: 600; font-size: calc((15px) * var(--theme-text-scale, 1)); }
+.configuration select { width: 100%; min-width: 0; min-height: 48px; padding: 12px 36px 12px 12px; border: 1px solid var(--line); border-radius: calc(8px * var(--theme-radius-scale, 1)); color: var(--ink); background-color: var(--paper); font: inherit; }
+.hint { margin: 0 0 12px; font-size: calc((13px) * var(--theme-text-scale, 1)); line-height: 1.65; color: var(--ink); }
+.offerList { display: grid; gap: 10px; margin-bottom: 12px; }
+.offer { display: grid; grid-template-columns: 20px minmax(0,1fr) minmax(100px,auto); align-items: center; gap: 12px; min-height: 88px; padding: 16px; border: 1px solid var(--line); border-radius: calc(12px * var(--theme-radius-scale, 1)); background: var(--paper); cursor: pointer; transition: background-color 160ms ease,border-color 160ms ease; }
+.offer[data-selected] { background: var(--soft); border-color: var(--olive); box-shadow: inset 0 0 0 1px var(--olive); }
+.offer[data-unavailable] { cursor: not-allowed; border-style: dashed; }
+.offer .radio { width: 18px; height: 18px; min-width: 18px; margin: 0; padding: 0; accent-color: var(--olive); appearance: auto; }
+.identity,.price { display: grid; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
+.identity strong,.price strong { font-size: calc((15px) * var(--theme-text-scale, 1)); line-height: 1.4; }
+.identity span,.price span,.price del { font-size: calc((12px) * var(--theme-text-scale, 1)); line-height: 1.5; }
+.price { text-align: right; }
+.selection { padding: 12px 14px; border-radius: calc(8px * var(--theme-radius-scale, 1)); background: var(--soft); font-size: calc((13px) * var(--theme-text-scale, 1)); line-height: 1.65; margin: 0; overflow-wrap: anywhere; }
+.picker :is(button,select,input):focus-visible { outline: 3px solid var(--olive); outline-offset: 4px; }
+.picker button:disabled,.picker select:disabled { cursor: not-allowed; opacity: .6; }
+@media(max-width:420px) { .offer { grid-template-columns: 18px minmax(0,1fr); padding: 14px; } .price { grid-column: 2; text-align: left; } }
+@media(prefers-reduced-motion:reduce) { .offer,.choices button { transition: none; } }

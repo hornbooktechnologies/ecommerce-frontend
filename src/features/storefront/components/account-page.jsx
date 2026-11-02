@@ -95,7 +95,7 @@ export default function AccountPage({ mode }) {
   const disabled = Boolean(busy);
   return <><StoreHeader /><main className={styles.page}>
     <Link className={styles.back} href="/"><ArrowLeft size={16} />Back to shopping</Link>
-    {mode === 'profile' && <div className={styles.links}><Link href="/account/orders">My orders <ArrowRight size={16} aria-hidden="true" /></Link></div>}
+    {mode === 'profile' && <div className={styles.links}><Link href="/account/orders">My orders <ArrowRight size={16} aria-hidden="true" /></Link><Link href="/account/questions">My questions <ArrowRight size={16} aria-hidden="true"/></Link></div>}
     <div className={styles.heading}><span className={styles.eyebrow}>THE HORNBOOK ACCOUNT</span><h1>{headings[mode]}</h1><p>{descriptions[mode]}</p></div>
     {error && <div ref={errorRef} tabIndex={-1} role="alert" className={styles.error}><strong>{error}</strong>{Object.entries(fieldErrors).map(([name, text]) => <p key={name}><a href={`#${errorGroup}-${name}`} onClick={() => document.getElementById(`${errorGroup}-${name}`)?.focus()}>{text}</a></p>)}{mode === 'profile' && !data && <button onClick={() => { setLoading(true); setReload((value) => value + 1); }}>Try again</button>}</div>}
     {message && <div className={styles.success} role="status"><ShieldCheck size={20} /><span>{message}</span></div>}

@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
+import './appearance.css';
 import { CatalogProvider } from '@/features/storefront/catalog-provider';
 import CartSession from '@/features/storefront/components/cart-session';
+import { ComparisonProvider } from '@/features/storefront/components/product-comparison';
+import StoreFooter, { FooterSkeleton } from '@/features/storefront/components/store-footer';
 import {
   getConfiguration,
   getProducts,
@@ -28,20 +32,25 @@ export default async function RootLayout({
     getProducts({ pageSize: 40 }),
   ]);
   return (
-    <html lang="en">
+    <html lang="en-IN" data-config-appearance="storefront" data-theme={configuration.appearance?.mode || 'light'} data-appearance-revision={configuration.appearance?.revision} data-scroll-behavior="smooth">
+      <head>{configuration.appearance && <style data-storefront-appearance dangerouslySetInnerHTML={{ __html: configuration.appearance.cssText }} />}</head>
       {/* Browser extensions can add body attributes before React hydrates. */}
       <body suppressHydrationWarning>
         <CatalogProvider
           configuration={configuration}
           products={products.items}
         >
-          {children}
+          <ComparisonProvider>{children}
+          <Suspense fallback={<FooterSkeleton store={configuration.store} />}>
+            <StoreFooter store={configuration.store} />
+          </Suspense>
           <CartSession />
+          </ComparisonProvider>
         </CatalogProvider>
         <Toaster
           style={{ fontFamily: 'inherit' }}
           position="bottom-right"
-          theme="light"
+          theme={configuration.appearance?.mode || 'light'}
           richColors
           closeButton
           duration={4000}

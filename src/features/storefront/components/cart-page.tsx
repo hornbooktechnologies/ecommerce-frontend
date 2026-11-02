@@ -62,7 +62,7 @@ export default function CartPage() {
             return <article className={styles.item} key={line.offerId}>
               <div className={styles.image}>{product ? <img src={photo(product.image, 350)} alt={product.name} /> : <ShoppingBag aria-hidden="true" size={32} />}</div>
               <div className={styles.details}>
-                <small>{product?.brand || 'UNAVAILABLE ITEM'}</small>
+                <small>{product ? product.brand || 'PRODUCT' : 'UNAVAILABLE ITEM'}</small>
                 <h3>{product ? <Link href={`/p/${product.slug}`}>{product.name}</Link> : 'This item is no longer available'}</h3>
                 {product && <><p>{product.variantName} · {product.sku}</p><p>Sold by {product.sellerName}</p>
                   <p className={styles.unitPrice}>{money(product.price)}{product.soldByWeight ? ` per ${product.uom}` : ' each'}{product.mrp > product.price && <del>{money(product.mrp)}</del>}</p></>}

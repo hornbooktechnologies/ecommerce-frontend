@@ -1,0 +1,30 @@
+html[data-config-appearance] { background:var(--paper); }
+html[data-config-appearance] body { background:var(--paper);color:var(--ink);font-family:var(--theme-body-font,"DM Sans",sans-serif);font-style:var(--theme-font-style,normal);font-weight:var(--theme-body-weight,400);line-height:var(--theme-line-height,1.6); }
+html[data-config-appearance] :is(.product-card,.product-info,.detail-account-popover,.header-popover,.search-preview,.search-dropdown,.category-menu,.cart-panel) { background:var(--theme-surface,var(--paper));color:var(--ink); }
+html[data-config-appearance] .detail-search { background:var(--theme-surface,var(--paper));color:var(--muted); }
+html[data-config-appearance] dialog { background:var(--theme-surface,var(--paper));color:var(--ink); }
+html[data-config-appearance] .commerce-search { color:var(--ink)!important; }
+html[data-config-appearance] .commerce-search input { color:var(--ink)!important; }
+html[data-config-appearance] .commerce-search .search-category-control>button { background:var(--soft);color:var(--ink); }
+html[data-config-appearance] :is(.header-popover,.detail-account-popover) :is(p,small) { color:var(--muted); }
+html[data-config-appearance] :is(.header-popover,.detail-account-popover) a:not(.popover-primary) { color:var(--ink); }
+html[data-config-appearance] :is(h1,h2,h3,h4,h5,h6) { font-family:var(--theme-heading-font,Manrope,sans-serif); }
+html[data-config-appearance] .detail-header,
+html[data-config-appearance] .main-header,
+html[data-config-appearance] .header { background:var(--theme-header-bg,#435449);color:var(--theme-header-ink,#fff); }
+html[data-config-appearance] .header :is(.logo,.header-action) { color:var(--theme-header-ink,#fff); }
+html[data-config-appearance] .detail-header :is(.logo,nav a,.detail-actions>button,.detail-actions>a,.detail-actions .header-menu-wrap>button) { color:var(--theme-header-ink,#fff); }
+html[data-config-appearance] :is(.primary-button,.popover-primary,.newsletter-submit,.quick-add) { background:var(--theme-button,var(--olive));color:var(--theme-button-ink,#fff); }
+html[data-config-appearance] :is(.primary-button,.popover-primary,.newsletter-submit,.quick-add):hover { background:var(--theme-button-hover,var(--olive));color:var(--theme-button-ink,#fff); }
+html[data-config-appearance] .campaign-carousel { background:linear-gradient(110deg,var(--soft),var(--paper)); }
+html[data-config-appearance] .campaign-copy>p,
+html[data-config-appearance] .campaign-copy>span { color:var(--muted); }
+html[data-config-appearance] .price>span { color:var(--olive); }
+html[data-config-appearance] .editorial-banner { background:var(--soft);color:var(--ink); }
+html[data-config-appearance] .editorial-banner p { color:var(--muted); }
+html[data-config-appearance] .text-button { color:var(--olive); }
+html[data-config-appearance] .campaign-image>span { background:var(--theme-surface,var(--paper));color:var(--ink); }
+html[data-config-appearance] .campaign-image>span :is(small,strong) { color:inherit; }
+html[data-config-appearance] .fashion-banner { background:var(--soft);color:var(--ink); }
+html[data-config-appearance] .fashion-banner p { color:var(--muted); }
+html[data-config-appearance] :is(.editorial-banner,.fashion-banner) :is(h2,h3,strong) { color:var(--ink); }

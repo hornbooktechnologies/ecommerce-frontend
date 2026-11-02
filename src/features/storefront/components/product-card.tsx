@@ -8,12 +8,14 @@ import {
   type Product,
 } from '@/features/storefront/data/live-catalog';
 import { useStore } from '@/features/storefront/store';
+import styles from './product-card.module.css';
+import { CompareButton } from './product-comparison';
 
 export default function ProductCard({ product }: { product: Product }) {
   const toggleWish = useStore((state) => state.toggleWish);
   const saved = useStore((state) => state.wishlist.includes(product.id));
   const wishBusy = useStore((state) => state.wishBusy);
-  const href = `/p/${product.slug}`;
+  const href = `/p/${product.slug}?offer=${encodeURIComponent(product.offerId)}`;
   return (
     <article className="product-card">
       <div className="product-image" style={{ background: product.color }}>
@@ -51,6 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
       <div className="product-info">
         <small>{product.brand}</small>
+        {(product.matchedColor || product.matchedSize) && <p className={styles.variant}>{[product.matchedColor, product.matchedSize].filter(Boolean).join(' / ')}</p>}
         <Link prefetch className="product-title" href={href}>
           {product.name}
         </Link>
@@ -74,6 +77,7 @@ export default function ProductCard({ product }: { product: Product }) {
             </>
           )}
         </div>
+        <CompareButton product={product} />
       </div>
     </article>
   );

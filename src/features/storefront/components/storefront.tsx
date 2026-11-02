@@ -24,8 +24,6 @@ import {
   Blocks,
   BookOpen,
   Menu,
-  Check,
-  Mail,
   UserRound,
   Package,
 } from 'lucide-react';
@@ -41,6 +39,7 @@ import { useCustomerSummary } from '../use-customer-summary';
 import DeliveryChecker from './delivery-checker';
 import headerStyles from './homepage-header.module.css';
 import CustomerInbox from './customer-inbox';
+import NewsletterForm from './newsletter-form';
 const icons = [
   Shirt,
   Headphones,
@@ -58,7 +57,6 @@ export default function Storefront() {
     [query, setQuery] = useState(''),
     [tab, setTab] = useState('Trending now'),
     [sort, setSort] = useState('popular'),
-    [newsletter, setNewsletter] = useState(false),
     [menu, setMenu] = useState(false),
     [headerMenu, setHeaderMenu] = useState<'account' | 'orders' | null>(null);
   const router = useRouter();
@@ -561,55 +559,8 @@ export default function Storefront() {
           </div>
           <span className="banner-number">01 / ∞</span>
         </section>
-        <section className="newsletter">
-          <div>
-            <Mail size={27} />
-            <div>
-              <h3>Good things. In your inbox.</h3>
-              <p>New finds, fresh collections and a little inspiration.</p>
-            </div>
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              setNewsletter(true);
-            }}
-          >
-            {newsletter ? (
-              <span className="subscribed">
-                <Check size={18} /> You’re on the demo list. Stay curious!
-              </span>
-            ) : (
-              <>
-                <input
-                  required
-                  type="email"
-                  aria-label="Your email address"
-                  placeholder="Enter your email address"
-                />
-                <button aria-label="Join newsletter">
-                  <ArrowRight size={20} />
-                </button>
-              </>
-            )}
-          </form>
-        </section>
+        <div id="newsletter"><NewsletterForm /></div>
       </main>
-      <footer>
-        <Link className="logo" href="/">
-          <span className="logo-symbol">a</span>
-          <span>
-            HORNBOOK<span className="logo-mall">RETAIL</span>
-          </span>
-        </Link>
-        <p>A world of wonderful, all in one place.</p>
-        <span>
-          © {new Date().getFullYear()} Hornbook Retail · Storefront preview
-        </span>
-        <span className="footer-note">
-          <ShieldCheck size={14} /> Thoughtfully made for everyday discovery
-        </span>
-      </footer>
     </>
   );
 }

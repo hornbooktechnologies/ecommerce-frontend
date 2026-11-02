@@ -1,9 +1,9 @@
 .hero:global(.campaign-carousel) { height: auto; min-height: 420px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); }
 .hero :global(.campaign-copy) { min-width: 0; padding-bottom: 72px; }
 .hero h1, .hero p, .hero a, .hero small, .hero strong { overflow-wrap: anywhere; }
-.hero :global(.campaign-copy) > p { font-size: 14px; color: #435448; }
-.hero :global(.campaign-copy) > span { color: #435448; font-size: 11px; }
-.hero :global(.campaign-copy) > a { margin-top: 18px; font-size: 12px; min-height: 44px; }
+.hero :global(.campaign-copy) > p { font-size: calc((14px) * var(--theme-text-scale, 1)); color: #435448; }
+.hero :global(.campaign-copy) > span { color: #435448; font-size: calc((11px) * var(--theme-text-scale, 1)); }
+.hero :global(.campaign-copy) > a { margin-top: 18px; font-size: calc((12px) * var(--theme-text-scale, 1)); min-height: 44px; }
 .hero :global(.campaign-image) { min-width: 0; }
 .hero :global(.campaign-image) > img { position: absolute; inset: 0; }
 .hero :global(.campaign-image) > span { min-width: 0; max-width: calc(100% - 56px); }

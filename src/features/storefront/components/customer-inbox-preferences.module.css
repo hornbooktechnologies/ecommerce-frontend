@@ -1,0 +1,19 @@
+.panel { padding: 24px; border-bottom: 1px solid var(--line); color: var(--ink); background: var(--paper); }
+.panel h3 { font-size: calc((20px) * var(--theme-text-scale, 1)); line-height: 1.5; margin: 0 0 12px; }
+.panel p { color: var(--ink); font-size: calc((14px) * var(--theme-text-scale, 1)); line-height: 1.7; margin: 12px 0; }
+.panel fieldset { border: 0; padding: 0; margin-block: 20px; }
+.panel legend { font-weight: 700; font-size: calc((14px) * var(--theme-text-scale, 1)); margin-bottom: 8px; }
+.option { display: flex; align-items: center; min-height: 48px; gap: 12px; padding: 10px 0; font-size: calc((15px) * var(--theme-text-scale, 1)); cursor: pointer; }
+.option input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--olive); }
+.required { padding: 14px 16px; background: var(--soft); border: 1px solid var(--line); border-radius: calc(12px * var(--theme-radius-scale, 1)); }
+.required strong { font-size: calc((14px) * var(--theme-text-scale, 1)); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.panel button { min-height: 44px; border: 1px solid var(--olive); border-radius: calc(9px * var(--theme-radius-scale, 1)); padding: 10px 14px; color: var(--ink); background: var(--paper); font: inherit; font-size: calc((14px) * var(--theme-text-scale, 1)); cursor: pointer; }
+.panel .save { color: var(--paper); background: var(--olive); font-weight: 600; }
+.panel .reload { padding-inline: 0; border: 0; background: transparent; color: var(--olive); text-decoration: underline; text-underline-offset: 4px; }
+.panel .error, .panel .success { padding: 12px; border-radius: calc(8px * var(--theme-radius-scale, 1)); }
+.panel .error { color: #8c3026; background: #fff0ed; border: 1px solid #d49d93; }
+.panel .success { color: #315039; background: #e5eee0; }
+.panel button:disabled { opacity: .55; cursor: not-allowed; }
+.panel :is(button, input):focus-visible, .panel h3:focus-visible { outline: 3px solid var(--olive); outline-offset: 3px; }
+@media (max-width: 480px) { .panel { padding: 20px 16px; } .actions button { flex: 1 1 auto; } }

@@ -11,20 +11,25 @@ import {
   type Variant,
 } from '../data/live-catalog';
 import { useStore } from '../store';
+import VariantSellerPicker from './variant-seller-picker';
+import ProductSizeGuide from './product-size-guide';
+import { CompareButton } from './product-comparison';
 
 export default function ProductActions({
   product,
+  initialOfferId,
 }: {
   product: ProductDetail;
+  initialOfferId?: string;
 }) {
-  const [offerId, setOfferId] = useState(product.offerId);
+  const [offerId, setOfferId] = useState(() => product.variants.some((item) => item.offerId === initialOfferId) ? initialOfferId : product.offerId);
   const variant =
     product.variants.find((item) => item.offerId === offerId) ||
     product.variants[0];
   if (!variant) return <p>This product is currently unavailable.</p>;
   return (
     <SelectedProduct
-      key={variant.offerId}
+      key={product.id}
       product={product}
       variant={variant}
       onSelect={setOfferId}
@@ -48,6 +53,14 @@ function SelectedProduct({
   const [quantity, setQuantity] = useState(variant.minimumOrderQuantity),
     [selectedImage, setSelectedImage] = useState(0),
     [added, setAdded] = useState(false);
+  function selectOffer(nextOfferId: string) {
+    const next = product.variants.find((item) => item.offerId === nextOfferId);
+    if (!next || busy) return;
+    setQuantity(next.minimumOrderQuantity);
+    setSelectedImage(0);
+    setAdded(false);
+    onSelect(nextOfferId);
+  }
   const images = product.images.filter(
     (image) =>
       (!image.variantId || image.variantId === variant.id) &&
@@ -131,35 +144,15 @@ function SelectedProduct({
           )}
         </div>
         <small>
-          {product.includesTax
+          {(variant.includesTax ?? product.includesTax)
             ? 'Inclusive of taxes'
             : 'Taxes calculated at checkout'}
           {variant.soldByWeight ? ` · per ${variant.uom}` : ''}
         </small>
         <div className="purchase-panel">
-          <div className="pdp-choice">
-            <label htmlFor="product-variant">
-              <strong>Select colour, size and seller</strong>
-            </label>
-            <select
-              id="product-variant"
-              className="live-variant-select"
-              value={variant.offerId}
-              onChange={(event) => onSelect(event.target.value)}
-            >
-              {product.variants.map((item) => (
-                <option key={item.offerId} value={item.offerId}>
-                  {[item.color, item.size, item.name, item.sellerName]
-                    .filter(Boolean)
-                    .join(' · ')}{' '}
-                  — {money(item.price)}
-                  {item.availableQuantity < item.minimumOrderQuantity
-                    ? ' · Out of stock'
-                    : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+          <VariantSellerPicker variants={product.variants} selected={variant} onSelect={selectOffer} disabled={busy} />
+          {product.sizeGuide && <ProductSizeGuide guide={product.sizeGuide} selectedSize={variant.size} />}
+          <CompareButton product={{...product,offerId:variant.offerId}} />
           <p>
             <strong>{inStock ? 'In stock' : 'Currently unavailable'}</strong> ·
             SKU {variant.sku}
@@ -176,7 +169,7 @@ function SelectedProduct({
                 setQuantity(event.target.valueAsNumber);
                 setAdded(false);
               }}
-              disabled={!inStock}
+              disabled={!inStock || busy}
             />
           </label>
           {inStock && !valid && (
@@ -207,6 +200,7 @@ function SelectedProduct({
                     minimumOrderQuantity: variant.minimumOrderQuantity,
                     quantityStep: variant.quantityStep,
                     sellerName: variant.sellerName,
+                    includesTax: variant.includesTax ?? product.includesTax,
                     inStock,
                   },
                   quantity,

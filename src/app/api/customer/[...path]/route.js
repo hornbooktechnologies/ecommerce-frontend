@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import {customerPhotoProxy} from '@/lib/review-photo-proxy';
 import { inboxProxyRoute } from '@/lib/customer-inbox';
 
 const cookieName = 'commerce_customer';
@@ -16,12 +17,14 @@ const jsonError = (message, status) => NextResponse.json({ error: { message } },
 
 async function handler(request, context) {
   const { path } = await context.params;
+  if(path[0]==='reviews')return customerPhotoProxy(request,path);
   const key = path.join('/');
   const inboxRoute = inboxProxyRoute(path, request.method, request.nextUrl.search);
   const isCheckout = path.length === 2 && path[0] === 'checkout' && ['options', 'quote', 'place', 'read', 'pay', 'verify'].includes(path[1]);
   const isOrders = path.length === 2 && path[0] === 'orders' && ['list', 'read', 'invoice', 'review', 'after-sales', 'cancel', 'return'].includes(path[1]);
+  const isQuestions = path.length===2 && path[0]==='questions' && ['ask','list','withdraw'].includes(path[1]);
   const isInvoice = key === 'orders/invoice';
-  const methods = isOrders || isCheckout || key === 'cart/sync' || key === 'wishlist/sync' ? ['POST'] : path.length === 1 ? routes[key] : path.length === 2 && path[0] === 'addresses' && /^[0-9a-f-]{36}$/i.test(path[1]) ? ['PUT', 'DELETE'] : null;
+  const methods = isQuestions || isOrders || isCheckout || key === 'cart/sync' || key === 'wishlist/sync' ? ['POST'] : path.length === 1 ? routes[key] : path.length === 2 && path[0] === 'addresses' && /^[0-9a-f-]{36}$/i.test(path[1]) ? ['PUT', 'DELETE'] : null;
   const isCart = path[0] === 'cart';
   const isWishlist = path[0] === 'wishlist';
   if (!inboxRoute && (!methods?.includes(request.method) || request.nextUrl.search)) return jsonError('Not found.', 404);

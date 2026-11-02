@@ -28,7 +28,7 @@ export default function StoreHeader() {
         </span>
       </Link>
       <DeliveryChecker />
-      <Link className="detail-search" href="/#discover">
+      <Link className="detail-search" href="/products">
         <span>Search Hornbook Retail</span>
         <Search size={19} />
       </Link>
@@ -56,6 +56,7 @@ export default function StoreHeader() {
               </Link>
               <hr />
               <Link href="/account/orders" onClick={() => setAccountOpen(false)}>My orders</Link>
+              <Link href="/account/questions" onClick={() => setAccountOpen(false)}>My questions</Link>
               {!customer.email && <><Link href="/account/login">Sign in</Link><Link href="/account/register">Create account</Link></>}
             </div>
           ) : null}

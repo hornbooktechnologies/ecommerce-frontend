@@ -1,0 +1,11 @@
+.footer { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(0, 1.6fr); align-items: start; gap: 32px; padding: 36px clamp(20px, 4.2vw, 80px); background: var(--soft); color: var(--ink); border-top: 1px solid var(--line); }
+.brandBlock { min-width: 0; }
+.brand { display: inline-block; font-size: calc((21px) * var(--theme-text-scale, 1)); font-weight: 700; color: var(--ink); text-decoration: none; line-height: 1.5; overflow-wrap: anywhere; padding-block: 4px; }
+.footer .copyright { display: block; font-size: calc((13px) * var(--theme-text-scale, 1)); line-height: 1.7; color: var(--ink); margin-top: 12px; }
+.links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 24px; min-width: 0; }
+.links a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; padding-block: 8px; font-size: calc((14px) * var(--theme-text-scale, 1)); line-height: 1.6; color: var(--ink); overflow-wrap: anywhere; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: text-decoration-color 160ms ease; }
+.links a:hover { text-decoration-color: currentColor; }
+.footer .unavailable { display: block; margin: 0; font-size: calc((14px) * var(--theme-text-scale, 1)); line-height: 1.7; color: var(--ink); }
+.footer a:focus-visible { outline: 3px solid var(--olive); outline-offset: 4px; border-radius: calc(2px * var(--theme-radius-scale, 1)); }
+@media (max-width: 760px) { .footer { grid-template-columns: minmax(0, 1fr); gap: 20px; } .links { justify-content: flex-start; gap: 8px 20px; } .links a { font-size: calc((15px) * var(--theme-text-scale, 1)); } }
+@media (prefers-reduced-motion: reduce) { .links a { transition: none; } }

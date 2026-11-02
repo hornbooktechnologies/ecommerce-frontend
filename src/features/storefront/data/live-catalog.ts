@@ -1,4 +1,5 @@
 export type Product = {
+  vertical: 'GENERAL' | 'GROCERY' | 'ELECTRONICS' | 'CLOTHING';
   id: string;
   slug: string;
   productCode: string;
@@ -21,6 +22,8 @@ export type Product = {
   sku: string;
   sellerName: string;
   inStock: boolean;
+  matchedColor?: string;
+  matchedSize?: string;
   availableQuantity: number;
   minimumOrderQuantity: number;
   quantityStep: number;
@@ -38,6 +41,7 @@ export type Category = {
   count: number;
 };
 export type Configuration = {
+  appearance?: { schemaVersion: number; mode: 'light' | 'dark' | 'system'; cssText: string; revision: string; scope: { kind: string; tenantId: string | null; storeId: string | null } };
   store: { name: string; tenantName: string; code: string; currency: string };
   categories: Category[];
   brands: { id: string; name: string; count: number }[];
@@ -74,10 +78,13 @@ export type Variant = {
   sku: string;
   colorId: string | null;
   color: string;
+  colorSwatch?: string | null;
   size: string;
   price: number;
   mrp: number;
   sellerName: string;
+  sellerId?: string;
+  includesTax?: boolean;
   availableQuantity: number;
   minimumOrderQuantity: number;
   maximumOrderQuantity: number | null;
@@ -87,6 +94,7 @@ export type Variant = {
   warrantyMonths: number;
 };
 export type ProductDetail = Product & {
+  sizeGuide?: { id: string; name: string; unit: 'CM' | 'IN'; basis: 'BODY' | 'GARMENT'; description: string; instructions: string; columns: string[]; rows: { size: string; values: string[] }[]; version: number } | null;
   variants: Variant[];
   images: {
     id: string;
@@ -98,7 +106,9 @@ export type ProductDetail = Product & {
     sortOrder: number;
   }[];
   specifications: Record<string, string>;
+  structuredSpecifications?: {code: string; label: string; group: string; unit: string; type: string; value: string | number | boolean; displayValue: string}[];
   reviewsList: {
+    photos?: {id:string;alt:string;width:number;height:number;url:string}[];
     id: string;
     rating: number;
     title: string;

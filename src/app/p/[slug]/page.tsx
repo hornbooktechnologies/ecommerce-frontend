@@ -8,6 +8,8 @@ import {
 import StoreHeader from '@/features/storefront/components/store-header';
 import ProductActions from '@/features/storefront/components/product-actions';
 import ProductCard from '@/features/storefront/components/product-card';
+import ProductQuestions from '@/features/storefront/components/product-questions';
+import ReviewPhotoGallery from '@/features/storefront/components/review-photo-gallery';
 
 async function load(slug: string) {
   try {
@@ -31,10 +33,17 @@ export async function generateMetadata({
 }
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ offer?: string | string[] }>;
 }) {
   const product = await load((await params).slug);
+  const requestedOffer = (await searchParams).offer;
+  const structured = product.structuredSpecifications || [];
+  const specificationRows = [...structured.map(field=>({key:field.code,label:field.label,value:field.displayValue,group:field.group})),
+    ...Object.entries(product.specifications).filter(([label])=>!structured.some(field=>field.label===label)).map(([label,value])=>({key:`legacy-${label}`,label,value,group:''}))];
+  const initialOfferId = typeof requestedOffer === 'string' && product.variants.some((item) => item.offerId === requestedOffer) ? requestedOffer : product.offerId;
   const related = (
     await getProducts({ category: product.categorySlug, pageSize: 6 })
   ).items
@@ -77,15 +86,15 @@ export default async function ProductPage({
           <span>/</span>
           <span>{product.name}</span>
         </nav>
-        <ProductActions product={product} />
+        <ProductActions key={`${product.id}-${initialOfferId}`} product={product} initialOfferId={initialOfferId} />
         <section id="specifications" className="live-product-section">
           <h2>Product specifications</h2>
-          {Object.keys(product.specifications).length ? (
+          {specificationRows.length ? (
             <dl className="live-specifications">
-              {Object.entries(product.specifications).map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
+              {specificationRows.map(field => (
+                <div key={field.key}>
+                  <dt>{field.group && <small>{field.group} · </small>}{field.label}</dt>
+                  <dd>{field.value}</dd>
                 </div>
               ))}
             </dl>
@@ -103,6 +112,7 @@ export default async function ProductPage({
                   {review.title || `${review.rating} out of 5 stars`}
                 </strong>
                 <p>{review.body}</p>
+                <ReviewPhotoGallery photos={review.photos}/>
                 <small>
                   {review.name} · {review.rating}/5
                   {review.verifiedPurchase ? ' · Verified purchase' : ''}
@@ -113,6 +123,7 @@ export default async function ProductPage({
             <p>No published reviews yet.</p>
           )}
         </section>
+        <ProductQuestions key={product.slug} productSlug={product.slug}/>
         {related.length > 0 && (
           <section className="live-product-section">
             <h2>More in {product.category}</h2>

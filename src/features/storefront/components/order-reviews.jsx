@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './order-reviews.module.css';
+import ReviewPhotos from './review-photos';
 
 const statusText = {
   PENDING: 'Awaiting moderation', PUBLISHED: 'Published',
@@ -68,11 +69,12 @@ function ItemReview({ orderId, item, onExpired }) {
     <div className={styles.heading}><div><h3 id={`${uid}-product`}>{item.productName}</h3><p>{item.variantName} · {item.sku}</p></div>
       {!saved && !open && <button ref={buttonRef} type="button" onClick={() => setOpen(true)}><Star size={17} aria-hidden="true" />Write a review</button>}
     </div>
-    {saved ? <p ref={feedbackRef} tabIndex={-1} role="status" className={styles.feedback}>Your review: {statusText[saved.status] || 'Received'}. {saved.status === 'PENDING' && 'It will appear on the product page after approval.'}</p>
+    {saved ? <><p ref={feedbackRef} tabIndex={-1} role="status" className={styles.feedback}>Your review: {statusText[saved.status] || 'Received'}. {saved.status === 'PENDING' && 'It will appear on the product page after approval.'}</p><ReviewPhotos reviewId={saved.id} productName={item.productName} reviewStatus={saved.status} onExpired={onExpired}/></>
       : open && <form onSubmit={submit} aria-label={`Review ${item.productName}`} aria-busy={busy}>
         {error && <p role="alert" tabIndex={-1} ref={feedbackRef} className={styles.error}>{error}</p>}
         <fieldset disabled={busy}>
           <legend className={styles.srOnly}>Your product review</legend>
+          <p>Submit your written review first, then add up to five product photos.</p>
           <label htmlFor={`${uid}-rating`}>Rating <span>(required)</span></label>
           <select id={`${uid}-rating`} name="rating" required defaultValue="" ref={ratingRef}
             aria-invalid={Boolean(fields.rating)} aria-describedby={fields.rating ? `${uid}-rating-error` : undefined}>

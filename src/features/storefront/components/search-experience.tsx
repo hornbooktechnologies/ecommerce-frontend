@@ -49,7 +49,6 @@ export default function SearchExperience({
   setQuery,
   category,
   setCategory,
-  onShowAll,
 }: {
   query: string;
   setQuery: (value: string) => void;
@@ -115,13 +114,19 @@ export default function SearchExperience({
     if (!query.trim()) return;
     remember(query);
     setOpen(false);
-    onShowAll();
+    const params = new URLSearchParams({search:query.trim()});
+    const slug = categories.find(item=>item.name===category)?.slug;
+    if(slug) params.set('category',slug);
+    router.push(`/products?${params}`);
   }
   function choose(value: string) {
     setQuery(value);
     remember(value);
     setOpen(false);
-    setTimeout(onShowAll, 0);
+    const params = new URLSearchParams({search:value.trim()});
+    const slug = categories.find(item=>item.name===category)?.slug;
+    if(slug) params.set('category',slug);
+    router.push(`/products?${params}`);
   }
   return (
     <div

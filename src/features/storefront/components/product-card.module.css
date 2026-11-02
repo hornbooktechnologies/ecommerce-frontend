@@ -1,0 +1,1 @@
+.variant { display:block; margin:6px 0; color:var(--ink); font-size:calc((12px) * var(--theme-text-scale, 1)); line-height:1.5; letter-spacing:normal; }

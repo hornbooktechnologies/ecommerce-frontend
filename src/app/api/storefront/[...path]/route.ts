@@ -12,10 +12,10 @@ export async function GET(
   if (
     !(
       path.length === 1 &&
-      ['config', 'categories', 'brands', 'products', 'delivery-availability'].includes(path[0])
+      ['config', 'categories', 'brands', 'products', 'facets', 'delivery-availability', 'compare'].includes(path[0])
     ) &&
     !(
-      path.length === 2 &&
+      (path.length === 2 || (path.length===3 && path[2]==='questions')) &&
       path[0] === 'products' &&
       /^[a-zA-Z0-9_-]{1,320}$/.test(path[1])
     )
@@ -43,7 +43,7 @@ export async function GET(
             error instanceof CatalogError
               ? path[0] === 'delivery-availability' && error.status === 422
                 ? 'Provide only a valid six-digit Indian PIN code.'
-                : error.message
+                : path[0] === 'compare' && error.status === 422 ? 'Choose 2–4 different products of the same type with available seller offers.' : error.message
               : 'The store is temporarily unavailable.',
         },
       },

@@ -4,11 +4,14 @@ import ProductCard from './product-card';
 import { useCatalogQuery } from '../catalog-provider';
 import { queryString, type Filters } from '../data/live-catalog';
 
-export default function CatalogResults({ filters }: { filters: Filters }) {
-  return <Results key={queryString(filters)} filters={filters} />;
+type Props = { filters: Filters; currentPage?: number; onPageChange?: (page: number) => void };
+export default function CatalogResults({ filters, currentPage, onPageChange }: Props) {
+  return <Results key={queryString(filters)} filters={filters} currentPage={currentPage} onPageChange={onPageChange} />;
 }
-function Results({ filters }: { filters: Filters }) {
-  const [page, setPage] = useState(1);
+function Results({ filters, currentPage, onPageChange }: Props) {
+  const [localPage, setLocalPage] = useState(1);
+  const page = currentPage ?? localPage;
+  const setPage = onPageChange || setLocalPage;
   const { data, loading, error, retry } = useCatalogQuery({
     ...filters,
     page,
@@ -39,7 +42,7 @@ function Results({ filters }: { filters: Filters }) {
     return (
       <div className="empty-state">
         <h3>No products match these filters</h3>
-        <p>Try a different category, brand or price.</p>
+        <p>Try another colour, size, brand or price, or clear your filters.</p>
         {page > 1 && (
           <button className="outline-button" onClick={() => setPage(1)}>
             Back to first page
@@ -50,7 +53,7 @@ function Results({ filters }: { filters: Filters }) {
   return (
     <>
       <p className="search-summary" role="status">
-        {data.total} products · Page {data.page} of {data.totalPages}
+        {data.total} {data.total === 1 ? 'product' : 'products'} · Page {data.page} of {data.totalPages}
       </p>
       <div className="category-product-grid">
         {data.items.map((product) => (
