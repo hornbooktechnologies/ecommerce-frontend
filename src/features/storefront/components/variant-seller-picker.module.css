@@ -27,3 +27,5 @@
 .picker button:disabled,.picker select:disabled { cursor: not-allowed; opacity: .6; }
 @media(max-width:420px) { .offer { grid-template-columns: 18px minmax(0,1fr); padding: 14px; } .price { grid-column: 2; text-align: left; } }
 @media(prefers-reduced-motion:reduce) { .offer,.choices button { transition: none; } }
+
+.offerRow{display:grid;gap:6px}.profileLink{display:inline-flex;align-items:center;justify-self:start;gap:6px;min-height:32px;padding:4px 8px;color:var(--olive);font-size:calc(13px * var(--theme-text-scale,1));text-underline-offset:4px}.profileLink:focus-visible{outline:2px solid var(--olive);outline-offset:3px}.profileLink[aria-disabled=true]{opacity:.5;pointer-events:none}

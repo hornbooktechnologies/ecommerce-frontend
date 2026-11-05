@@ -1,5 +1,6 @@
 'use client';
 
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { RotateCcw, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,6 +20,8 @@ async function api(path, body, signal) {
 }
 
 export default function OrderAfterSales({ orderId, onChanged, onExpired }) {
+ const {t: _uiText}=useUiLocalization();
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
@@ -114,7 +117,7 @@ export default function OrderAfterSales({ orderId, onChanged, onExpired }) {
             {item.serials.length > 0 && <fieldset className={styles.serials} {...props('serialIds')}><legend>Serial numbers to return</legend><small>Select the serials for the returned units. For a bundle, include each serialized component.</small>{item.serials.map((serial) => <label key={serial.id}><input type="checkbox" name="serialIds" value={serial.id} /><span>{serial.number}</span></label>)}{fieldError('serialIds')}</fieldset>}
             <label htmlFor={`${uid}-comments`}>Details / preferred exchange size and colour</label><textarea id={`${uid}-comments`} name="customerComments" maxLength={1000} rows={3} {...props('customerComments')} />{fieldError('customerComments')}
             <small>The store will confirm replacement availability and any price difference. Do not include payment credentials or other sensitive information.</small>
-            <div className={styles.actions}><button type="button" onClick={close}>Back</button><button type="submit" className={styles.primary}>{busy ? 'Submitting…' : 'Submit request'}</button></div>
+            <div className={styles.actions}><button type="button" onClick={close}>{_uiText("Back")}</button><button type="submit" className={styles.primary}>{busy ? 'Submitting…' : 'Submit request'}</button></div>
           </fieldset>
         </form>}
       </article>)}</div>
@@ -125,7 +128,7 @@ export default function OrderAfterSales({ orderId, onChanged, onExpired }) {
           <ul>{entry.items.map((item, index) => <li key={`${item.orderItemId}-${index}`}>{item.name} · {item.quantity} requested</li>)}</ul>
           <ol className={styles.timeline}>{[['Requested', entry.requestedAt], ['Approved', entry.approvedAt], ['Received by store', entry.receivedAt], ['Completed', entry.completedAt]].filter(([, at]) => at).map(([label, at]) => <li key={label}><strong>{label}</strong><small>{when(at)}</small></li>)}</ol>
           {entry.status === 'REJECTED' && <p>The store did not approve this request. Contact the store for details.</p>}
-          {entry.exchange && <p>Replacement: {entry.exchange.variant} · {entry.exchange.sku} · {entry.exchange.status === 'COMPLETED' ? 'Completed' : 'Reserved by store'}</p>}
+          {entry.exchange && <p>Replacement: {entry.exchange.variant} · {entry.exchange.sku} · {entry.exchange.status === 'COMPLETED' ? _uiText("Completed") : 'Reserved by store'}</p>}
           <small>Request completion is not confirmation that a refund has reached your bank account.</small>
         </article>)}
       </section>

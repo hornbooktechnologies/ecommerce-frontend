@@ -1,18 +1,15 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Heart, ShoppingBag } from 'lucide-react';
-import {
-  money,
-  photo,
-  type ProductDetail,
-  type Variant,
-} from '../data/live-catalog';
+import { photo, type ProductDetail, type Variant } from '../data/live-catalog';
 import { useStore } from '../store';
 import VariantSellerPicker from './variant-seller-picker';
 import ProductSizeGuide from './product-size-guide';
+import ShoppingAlertActions from './shopping-alert-actions';
 import { CompareButton } from './product-comparison';
 
 export default function ProductActions({
@@ -45,6 +42,8 @@ function SelectedProduct({
   variant: Variant;
   onSelect: (id: string) => void;
 }) {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const add = useStore((state) => state.add),
     toggleWish = useStore((state) => state.toggleWish);
   const saved = useStore((state) => state.wishlist.includes(product.id));
@@ -128,15 +127,15 @@ function SelectedProduct({
               {product.rating} stars · {product.reviews} published reviews
             </a>
           ) : (
-            <span>No reviews yet</span>
+            <span>{_uiText("No reviews yet")}</span>
           )}
         </div>
         <hr />
         <div className="product-price">
-          <strong>{money(variant.price)}</strong>
+          <strong>{_localizedMoney(variant.price)}</strong>
           {variant.mrp > variant.price && (
             <>
-              <del>MRP {money(variant.mrp)}</del>
+              <del>MRP {_localizedMoney(variant.mrp)}</del>
               <span>
                 {Math.round((1 - variant.price / variant.mrp) * 100)}% OFF
               </span>
@@ -146,7 +145,7 @@ function SelectedProduct({
         <small>
           {(variant.includesTax ?? product.includesTax)
             ? 'Inclusive of taxes'
-            : 'Taxes calculated at checkout'}
+            : _uiText("Taxes calculated at checkout")}
           {variant.soldByWeight ? ` · per ${variant.uom}` : ''}
         </small>
         <div className="purchase-panel">
@@ -154,7 +153,7 @@ function SelectedProduct({
           {product.sizeGuide && <ProductSizeGuide guide={product.sizeGuide} selectedSize={variant.size} />}
           <CompareButton product={{...product,offerId:variant.offerId}} />
           <p>
-            <strong>{inStock ? 'In stock' : 'Currently unavailable'}</strong> ·
+            <strong>{inStock ? _uiText("In stock") : 'Currently unavailable'}</strong> ·
             SKU {variant.sku}
           </p>
           <label className="live-quantity">
@@ -225,7 +224,7 @@ function SelectedProduct({
               }}
             >
               <ShoppingBag size={18} />
-              {busy ? 'Updating bag…' : added ? 'Added to bag' : 'Add to bag'}
+              {busy ? 'Updating bag…' : added ? 'Added to bag' : _uiText("Add to bag")}
             </button>
             <button
               className="outline-button"
@@ -234,7 +233,7 @@ function SelectedProduct({
               onClick={() => toggleWish(product)}
             >
               <Heart size={18} fill={saved ? 'currentColor' : 'none'} />
-              {saved ? 'Saved' : 'Save'}
+              {saved ? 'Saved' : _uiText("Save")}
             </button>
           </div>
           {added && (
@@ -244,10 +243,11 @@ function SelectedProduct({
             </p>
           )}
         </div>
+        <ShoppingAlertActions key={variant.offerId} offerId={variant.offerId} inStock={Math.min(variant.availableQuantity,variant.maximumOrderQuantity??variant.availableQuantity)>=variant.minimumOrderQuantity} price={variant.price} currency={product.currency}/>
         <section className="seller-card">
           <div>
             <small>SOLD BY</small>
-            <strong>{variant.sellerName}</strong>
+            <strong>{variant.sellerProfileHref?<Link href={variant.sellerProfileHref} prefetch={false}>{variant.sellerName} · View seller profile</Link>:variant.sellerName}</strong>
           </div>
         </section>
         <p>

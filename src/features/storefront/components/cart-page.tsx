@@ -1,11 +1,13 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Minus, Plus, RefreshCw, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import StoreHeader from './store-header';
-import { money, photo } from '../data/live-catalog';
+import {ShoppingReminders} from './shopping-reminders';
+import { photo } from '../data/live-catalog';
 import { useStore } from '../store';
 import styles from './cart-page.module.css';
 
@@ -34,6 +36,8 @@ function Quantity({ offerId, quantity, minimum, maximum, step, uom, disabled }: 
 }
 
 export default function CartPage() {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const { bag, busy, ready, error, sync, setQuantity, clear } = useStore();
   const [sessionChecked, setSessionChecked] = useState(false);
   useEffect(() => {
@@ -49,12 +53,13 @@ export default function CartPage() {
     <header className={styles.heading}><div><p className={styles.eyebrow}>YOUR HORNBOOK BAG</p><h1>A few good finds.</h1>
       <p>{!sessionChecked || !ready || busy ? 'Checking your saved bag…' : bag?.mode === 'customer' ? 'Saved to your customer account.' : guest ? 'Your guest bag stays saved on this browser for up to 30 days.' : 'Refresh your bag to confirm its latest status.'}</p></div>
       <button className={styles.secondary} disabled={busy} onClick={() => void feedback(sync)}><RefreshCw size={17} /> Refresh bag</button></header>
-    {error && <div role="alert" className={styles.error}>{error} <button disabled={busy} onClick={() => void feedback(sync)}>Retry</button></div>}
+    <ShoppingReminders kind="CART"/>
+    {error && <div role="alert" className={styles.error}>{error} <button disabled={busy} onClick={() => void feedback(sync)}>{_uiText("Retry")}</button></div>}
     {!ready ? <section aria-live="polite" aria-busy={busy} className={styles.empty}><ShoppingBag size={32} /><h2>{busy ? 'Checking your bag…' : 'Your bag could not be loaded.'}</h2><p>Prices and availability are checked with the store.</p></section>
-      : !bag?.items.length ? <section className={styles.empty}><ShoppingBag size={38} /><h2>Your bag has room for something good.</h2><p>Explore the collection and choose your colour, size and seller.</p><Link className={styles.primary} href="/#discover">Explore products <ArrowRight size={18} /></Link></section>
+      : !bag?.items.length ? <section className={styles.empty}><ShoppingBag size={38} /><h2>Your bag has room for something good.</h2><p>Explore the collection and choose your colour, size and seller.</p><Link className={styles.primary} href="/#discover">{_uiText("Explore products")} <ArrowRight size={18} /></Link></section>
       : <div className={styles.layout} aria-busy={busy}>
         <section className={styles.items} aria-label="Bag items">
-          <div className={styles.listHeading}><h2>{bag.items.length} {bag.items.length === 1 ? 'item' : 'items'}</h2><button className={styles.textButton} disabled={busy} onClick={() => void feedback(clear, 'Bag cleared.')}>Clear bag</button></div>
+          <div className={styles.listHeading}><h2>{bag.items.length} {bag.items.length === 1 ? 'item' : _uiText("items")}</h2><button className={styles.textButton} disabled={busy} onClick={() => void feedback(clear, 'Bag cleared.')}>Clear bag</button></div>
           {bag.merged && <p role="status" className={styles.notice}>Your guest bag has been combined with your saved bag. Please review the quantities.</p>}
           {bag.items.map((line) => {
             const product = line.product;
@@ -64,20 +69,20 @@ export default function CartPage() {
               <div className={styles.details}>
                 <small>{product ? product.brand || 'PRODUCT' : 'UNAVAILABLE ITEM'}</small>
                 <h3>{product ? <Link href={`/p/${product.slug}`}>{product.name}</Link> : 'This item is no longer available'}</h3>
-                {product && <><p>{product.variantName} · {product.sku}</p><p>Sold by {product.sellerName}</p>
-                  <p className={styles.unitPrice}>{money(product.price)}{product.soldByWeight ? ` per ${product.uom}` : ' each'}{product.mrp > product.price && <del>{money(product.mrp)}</del>}</p></>}
+                {product && <><p>{product.variantName} · {product.sku}</p><p>{_uiText("Sold by")} {product.sellerName}</p>
+                  <p className={styles.unitPrice}>{_localizedMoney(product.price)}{product.soldByWeight ? ` per ${product.uom}` : ' each'}{product.mrp > product.price && <del>{_localizedMoney(product.mrp)}</del>}</p></>}
                 {line.issue && <p className={styles.issue} role="status">{line.issue}</p>}
                 <div className={styles.controls}>
                   {product && maximum >= product.minimumOrderQuantity ? <Quantity key={`${line.offerId}-${line.quantity}`} offerId={line.offerId} quantity={line.quantity}
                     minimum={product.minimumOrderQuantity} maximum={maximum} step={product.quantityStep} uom={product.uom} disabled={busy} /> : <span>Quantity: {line.quantity}</span>}
-                  <button className={styles.remove} disabled={busy} onClick={() => void feedback(() => setQuantity(line.offerId, 0), 'Item removed.')} aria-label={`Remove ${product?.name || 'unavailable item'}`}><Trash2 size={17} /> Remove</button>
+                  <button className={styles.remove} disabled={busy} onClick={() => void feedback(() => setQuantity(line.offerId, 0), 'Item removed.')} aria-label={`Remove ${product?.name || 'unavailable item'}`}><Trash2 size={17} /> {_uiText("Remove")}</button>
                 </div>
-              </div><strong className={styles.lineTotal}>{line.lineTotal === null ? '—' : money(line.lineTotal)}</strong>
+              </div><strong className={styles.lineTotal}>{line.lineTotal === null ? '—' : _localizedMoney(line.lineTotal)}</strong>
             </article>;
           })}
         </section>
         <aside className={styles.summary}><p className={styles.eyebrow}>BAG SUMMARY</p><h2>Good things, accounted for.</h2>
-          <div className={styles.total}><span>Item subtotal</span><strong>{money(bag.subtotal)}</strong></div>
+          <div className={styles.total}><span>Item subtotal</span><strong>{_localizedMoney(bag.subtotal)}</strong></div>
           {bag.hasIssues && <p className={styles.issue}>Some items need attention. This subtotal is not a payable order total.</p>}
           <p>Prices are checked live. Delivery charges, applicable taxes and discounts will be confirmed at checkout.</p>
           {bag.items.some((line) => line.product?.soldByWeight) && <p>Weighted items use the requested quantity. The final packed weight may change the amount.</p>}

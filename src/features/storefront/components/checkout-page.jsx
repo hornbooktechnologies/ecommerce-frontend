@@ -1,4 +1,5 @@
 'use client';
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import PaymentControls from './payment-controls';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, MapPin, Plus, ShieldCheck, Truck } from '
 import { toast } from 'sonner';
 import StoreHeader from './store-header';
 import { useStore } from '../store';
-import { money } from '../data/live-catalog';
+
 import styles from './checkout-page.module.css';
 
 const date = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' });
@@ -20,7 +21,10 @@ async function api(path, body = {}) {
   return result.data;
 }
 const emptyAddress = { label: '', contactName: '', phone: '', line1: '', line2: '', landmark: '', city: '', stateCode: '', postalCode: '', isDefault: false };
+const receiptStatus = status => ({PLACED:'Awaiting store confirmation',CONFIRMED:'Confirmed',PROCESSING:'Being prepared',COMPLETED:'Completed',CANCELLED:'Cancelled'}[status] || 'Check order tracking');
 function AddressForm({ states, initialAddress, onSaved, onCancel }) {
+ const {t: _uiText}=useUiLocalization();
+
   const [form, setForm] = useState(() => ({ ...emptyAddress, ...initialAddress })), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const errorRef = useRef(null);
   const headingRef = useRef(null);
@@ -38,13 +42,15 @@ function AddressForm({ states, initialAddress, onSaved, onCancel }) {
       {[['label', 'Address label', false], ['contactName', 'Recipient name', true], ['phone', 'Phone number', true], ['line1', 'Address line 1', true], ['line2', 'Address line 2', false], ['landmark', 'Landmark', false], ['city', 'City', true], ['postalCode', 'PIN code', true]].map(([name, label, required]) =>
         <label key={name}>{label}{required ? ' *' : ''}<input value={form[name]} onChange={(event) => setForm({ ...form, [name]: event.target.value })} required={required} maxLength={name === 'postalCode' ? 6 : name === 'phone' ? 32 : 255}
           inputMode={name === 'postalCode' ? 'numeric' : name === 'phone' ? 'tel' : 'text'} pattern={name === 'postalCode' ? '[1-9][0-9]{5}' : undefined} disabled={busy} /></label>)}
-      <label>State / union territory *<select value={form.stateCode} required onChange={(event) => setForm({ ...form, stateCode: event.target.value })} disabled={busy}><option value="">Select state</option>{Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <label>State / union territory *<select value={form.stateCode} required onChange={(event) => setForm({ ...form, stateCode: event.target.value })} disabled={busy}><option value="">{_uiText("Select state")}</option>{Object.entries(states).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
     </div><label className={styles.check}><input type="checkbox" checked={form.isDefault} onChange={(event) => setForm({ ...form, isDefault: event.target.checked })} disabled={busy} /> Make this my default delivery address</label>
-    <div className={styles.actions}><button className={styles.secondary} type="button" onClick={onCancel} disabled={busy}>Cancel</button><button className={styles.primary} disabled={busy}>{busy ? 'Saving…' : 'Save delivery address'}</button></div>
+    <div className={styles.actions}><button className={styles.secondary} type="button" onClick={onCancel} disabled={busy}>{_uiText("Cancel")}</button><button className={styles.primary} disabled={busy}>{busy ? _uiText("Saving…") : 'Save delivery address'}</button></div>
   </form>;
 }
 
 export default function CheckoutPage({ attempt }) {
+ const {t: _uiText,transactionMoney: _localizedMoney}=useUiLocalization();
+
   const bag = useStore((state) => state.bag);
   const [options, setOptions] = useState({ addresses: [], previousAddresses: [], states: {}, slots: [] });
   const [addressDraft, setAddressDraft] = useState(null);
@@ -119,25 +125,26 @@ export default function CheckoutPage({ attempt }) {
     } finally { setBusy(false); }
   }
   return <><StoreHeader /><main className={styles.page}>
-    <Link className={styles.back} href="/cart"><ArrowLeft size={16} aria-hidden="true" /> Back to bag</Link>
-    <header><p className={styles.eyebrow}>HORNBOOK CHECKOUT</p><h1>{receipt ? 'We have your order.' : 'One last look.'}</h1><p>Delivery details, clear totals and your preferred payment method.</p></header>
+    <Link className={styles.back} href="/cart"><ArrowLeft size={16} aria-hidden="true" /> {_uiText("Back to bag")}</Link>
+    <p className={styles.notice}>{_uiText('All checkout amounts below are in INR. Converted browsing prices are estimates only.')}</p>
+    <header><p className={styles.eyebrow}>HORNBOOK CHECKOUT</p><h1>{receipt ? _uiText("We have your order.") : 'One last look.'}</h1><p>Delivery details, clear totals and your preferred payment method.</p></header>
     {error && <div role="alert" tabIndex={-1} ref={errorRef} className={styles.error}>{error} <button onClick={() => { setError(''); setLoading(true); setReload((value) => value + 1); }} disabled={busy}>Check again</button></div>}
     {loading ? <section className={styles.card} aria-busy="true" role="status">Loading your secure checkout…</section>
-      : signedOut ? <section className={styles.card}><ShieldCheck aria-hidden="true" /><h2>Sign in to continue</h2><p>Use your verified customer account for saved addresses and secure checkout. Your guest bag will merge after sign-in.</p><Link href="/account/login" className={styles.primary}>Sign in</Link></section>
-      : receipt ? <section className={styles.card} tabIndex={-1} ref={confirmationRef}><span className={styles.success}><Check size={24} aria-hidden="true" /> Order saved</span><h2>{receipt.orderNumber}</h2><p>{receipt.message}</p><dl className={styles.totals}><div><dt>Order total</dt><dd>{money(receipt.grandTotal)}</dd></div><div><dt>Payment</dt><dd>{receipt.paymentMethod === 'ONLINE_TEST' ? receipt.paymentStatus === 'PAID' ? 'Test payment verified' : 'Awaiting test payment' : receipt.paymentMethod === 'COD' ? 'Cash on delivery' : 'Unpaid'}</dd></div><div><dt>Status</dt><dd>{receipt.status === 'CANCELLED' ? 'Cancelled' : 'Awaiting store confirmation'}</dd></div></dl>
+      : signedOut ? <section className={styles.card}><ShieldCheck aria-hidden="true" /><h2>Sign in to continue</h2><p>Use your verified customer account for saved addresses and secure checkout. Your guest bag will merge after sign-in.</p><Link href="/account/login" className={styles.primary}>{_uiText("Sign in")}</Link></section>
+      : receipt ? <section className={styles.card} tabIndex={-1} ref={confirmationRef}><span className={styles.success}><Check size={24} aria-hidden="true" /> {_uiText("Order saved")}</span><h2>{receipt.orderNumber}</h2><p>{receipt.message}</p><dl className={styles.totals}><div><dt>{_uiText("Order total")}</dt><dd>{_localizedMoney(receipt.grandTotal)}</dd></div><div><dt>{_uiText("Payment")}</dt><dd>{receipt.paymentMethod === 'ONLINE_TEST' ? receipt.paymentStatus === 'PAID' ? 'Test payment verified' : 'Awaiting test payment' : receipt.paymentMethod === 'COD' ? receipt.paymentStatus === 'PAID' ? 'COD collection recorded' : `COD · ${receipt.paymentStatus.toLowerCase().replaceAll('_',' ')}` : _uiText("Unpaid")}</dd></div><div><dt>{_uiText("Status")}</dt><dd>{receiptStatus(receipt.status)}</dd></div></dl>
         {receipt.testMode && <PaymentControls receipt={receipt} onUpdated={setReceipt} onBusyChange={setBusy} />}
-        <p>The selected delivery slot is recorded. Stock is allocated when the store confirms and prepares fulfilment.</p><Link href={`/account/orders/${receipt.id}`} className={styles.primary}>Track your order <ArrowRight size={18} aria-hidden="true" /></Link> <Link href="/#discover" className={styles.back}>Continue shopping <ArrowRight size={18} aria-hidden="true" /></Link></section>
+        <p>The selected delivery slot is recorded. Stock is allocated when the store confirms and prepares fulfilment.</p><Link href={`/account/orders/${receipt.id}`} className={styles.primary}>{_uiText("Track your order")} <ArrowRight size={18} aria-hidden="true" /></Link> <Link href="/#discover" className={styles.back}>{_uiText("Continue shopping")} <ArrowRight size={18} aria-hidden="true" /></Link></section>
       : quote ? <div className={styles.layout}>
         <section className={styles.card}><p className={styles.eyebrow}>REVIEW YOUR ORDER</p><h2>Everything in its place.</h2><h3>Deliver to {quote.address.contactName}</h3><p>{[quote.address.line1, quote.address.line2, quote.address.city, quote.address.stateName, quote.address.postalCode].filter(Boolean).join(', ')}</p><p><Truck size={18} aria-hidden="true" /> {slotLabel(quote.slot)}</p>
-          <ul className={styles.lines}>{quote.review.items.map((line) => <li key={line.offerId}><div><strong>{line.productName}</strong><span>{line.variantName} · {line.sku}</span><span>Quantity {line.quantity}{line.soldByWeight ? ' (requested weight)' : ''}</span></div><strong>{money(line.lineTotal)}</strong></li>)}</ul>
+          <ul className={styles.lines}>{quote.review.items.map((line) => <li key={line.offerId}><div><strong>{line.productName}</strong><span>{line.variantName} · {line.sku}</span><span>{_uiText("Quantity")} {line.quantity}{line.soldByWeight ? ' (requested weight)' : ''}</span></div><strong>{_localizedMoney(line.lineTotal)}</strong></li>)}</ul>
           <button className={styles.secondary} disabled={busy} onClick={edit}>Edit delivery or coupon</button>
         </section><aside className={styles.card}><p className={styles.eyebrow}>FINAL REVIEW</p><h2>Order summary</h2><dl className={styles.totals}>
-          <div><dt>List-price subtotal</dt><dd>{money(quote.review.subtotal)}</dd></div><div><dt>Discounts</dt><dd>−{money(quote.review.discountTotal)}</dd></div><div><dt>Delivery</dt><dd>{money(quote.review.shippingTotal)}</dd></div><div><dt>Included item GST</dt><dd>{money(quote.review.taxTotal)}</dd></div><div className={styles.grand}><dt>Order total</dt><dd>{money(quote.review.grandTotal)}</dd></div></dl>
+          <div><dt>List-price subtotal</dt><dd>{_localizedMoney(quote.review.subtotal)}</dd></div><div><dt>{_uiText("Discounts")}</dt><dd>−{_localizedMoney(quote.review.discountTotal)}</dd></div><div><dt>{_uiText("Delivery")}</dt><dd>{_localizedMoney(quote.review.shippingTotal)}</dd></div><div><dt>{_uiText("Included item GST")}</dt><dd>{_localizedMoney(quote.review.taxTotal)}</dd></div><div className={styles.grand}><dt>{_uiText("Order total")}</dt><dd>{_localizedMoney(quote.review.grandTotal)}</dd></div></dl>
           <p className={styles.notice}>{quote.paymentMethod === 'ONLINE_TEST' ? 'Online payment · Razorpay Test Mode. Save your order, then complete a simulated payment. No real money will be collected.' : 'Cash on delivery. Pay when your order arrives; nothing is collected online.'} Stock is allocated during fulfilment.</p>
           {quote.review.items.some((line) => line.soldByWeight) && <p>Weight-based item amounts are estimates until the store records the final packed weight.</p>}
-          <button className={styles.primary} disabled={busy} onClick={place}>{busy ? 'Submitting securely…' : quote.paymentMethod === 'ONLINE_TEST' ? 'Save order & continue to test payment' : 'Place COD order'} <ArrowRight size={18} aria-hidden="true" /></button><p className={styles.small}>Review valid until {date.format(new Date(quote.expiresAt))} IST. Prices and capacity are checked again on submission. If the connection fails, retry this same attempt.</p>
+          <button className={styles.primary} disabled={busy} onClick={place}>{busy ? 'Submitting securely…' : quote.paymentMethod === 'ONLINE_TEST' ? 'Save order & continue to test payment' : _uiText("Place COD order")} <ArrowRight size={18} aria-hidden="true" /></button><p className={styles.small}>Review valid until {date.format(new Date(quote.expiresAt))} IST. Prices and capacity are checked again on submission. If the connection fails, retry this same attempt.</p>
         </aside></div>
-      : !bag?.items.length ? <section className={styles.card}><h2>Your bag is empty</h2><Link className={styles.primary} href="/#discover">Explore products</Link></section>
+      : !bag?.items.length ? <section className={styles.card}><h2>{_uiText("Your bag is empty")}</h2><Link className={styles.primary} href="/#discover">{_uiText("Explore products")}</Link></section>
       : <div className={styles.layout}><section className={styles.card}><h2><MapPin size={21} aria-hidden="true" /> Where should it go?</h2>
         {newAddress ? <AddressForm states={options.states} initialAddress={addressDraft} onCancel={() => setNewAddress(false)} onSaved={(addresses) => { const added = addresses.find((item) => !options.addresses.some((old) => old.id === item.id)); setOptions({ ...options, addresses, slots: [] }); setAddressId(added?.id || addresses[0]?.id || ''); setSlotId(''); setSlotsLoading(true); setNewAddress(false); setAddressDraft(null); }} /> : <><button className={styles.secondary} onClick={() => { setAddressDraft(null); setNewAddress(true); }}><Plus size={16} aria-hidden="true" /> Add delivery address</button>
         <form onSubmit={review} className={styles.form}>
@@ -150,7 +157,7 @@ export default function CheckoutPage({ attempt }) {
                   aria-label={`Deliver to ${item.label || item.contactName}, ${item.line1}, ${item.postalCode}`}
                   onChange={() => { setAddressId(item.id); setSlotId(''); setOptions((current) => ({ ...current, slots: [] })); setSlotsLoading(true); }} />
                 <span className={styles.addressContent}><span className={styles.addressTitle}><strong>{item.label || 'Delivery address'}</strong>{item.isDefault && <span className={styles.addressBadge}>Default</span>}{addressId === item.id && <span className={styles.addressBadge}><Check size={14} aria-hidden="true" /> Selected</span>}</span>
-                  <strong>{item.contactName}</strong><span>{[item.line1, item.line2, item.landmark].filter(Boolean).join(', ')}</span><span>{item.city}, {item.stateName} {item.postalCode}</span><span>{item.countryCode === 'IN' ? 'India' : item.countryCode}</span><span>{item.phone || 'Phone number missing — update this address before ordering.'}</span>
+                  <strong>{item.contactName}</strong><span>{[item.line1, item.line2, item.landmark].filter(Boolean).join(', ')}</span><span>{item.city}, {item.stateName} {item.postalCode}</span><span>{item.countryCode === 'IN' ? _uiText("India") : item.countryCode}</span><span>{item.phone || 'Phone number missing — update this address before ordering.'}</span>
                 </span>
               </label>)}</div>}
             <Link className={styles.back} href="/account">Manage saved addresses</Link>
@@ -162,21 +169,21 @@ export default function CheckoutPage({ attempt }) {
               <button type="button" className={styles.secondary} disabled={busy || options.addresses.length >= 20} aria-label={`Use address from order ${item.orderNumber}`} onClick={() => {
                 setAddressDraft(Object.fromEntries(Object.keys(emptyAddress).map((key) => [key, key === 'label' ? 'Previous delivery' : key === 'isDefault' ? false : item[key] || ''])));
                 setNewAddress(true);
-              }}>Use this address <ArrowRight size={16} aria-hidden="true" /></button>
+              }}>{_uiText("Use this address")} <ArrowRight size={16} aria-hidden="true" /></button>
             </article>)}</div>
             {options.addresses.length >= 20 && <p className={styles.notice}>Your address book is full. Manage saved addresses to remove one before adding another.</p>}
           </section>}
-          <label>Delivery slot *<select required value={slotId} onChange={(event) => setSlotId(event.target.value)} disabled={busy || slotsLoading || !options.slots.length}><option value="">{slotsLoading ? 'Loading slots…' : 'Choose delivery slot'}</option>{options.slots.map((slot) => <option key={slot.id} value={slot.id}>{slotLabel(slot)} · {money(slot.deliveryFee)} before offers</option>)}</select></label>
+          <label>Delivery slot *<select required value={slotId} onChange={(event) => setSlotId(event.target.value)} disabled={busy || slotsLoading || !options.slots.length}><option value="">{slotsLoading ? 'Loading slots…' : _uiText("Choose delivery slot")}</option>{options.slots.map((slot) => <option key={slot.id} value={slot.id}>{slotLabel(slot)} · {_localizedMoney(slot.deliveryFee)} before offers</option>)}</select></label>
           {addressId && !slotsLoading && !options.slots.length && <p className={styles.notice} role="status">{options.deliveryAvailability?.message || 'Delivery availability could not be confirmed. Please check again.'}</p>}
           <label>Coupon code (optional)<input value={couponCode} maxLength={80} onChange={(event) => setCouponCode(event.target.value.toUpperCase())} disabled={busy} autoCapitalize="characters" /><small>Applied and validated when you review the order.</small></label>
           <label>Grocery substitutions<select value={substitutionPreference} onChange={(event) => setSubstitution(event.target.value)} disabled={busy}><option value="CONTACT_ME">Contact me before substituting</option><option value="NO_SUBSTITUTION">Do not substitute</option><option value="ALLOW_SIMILAR">Allow similar items</option></select></label>
           <label>Delivery notes (optional)<textarea value={notes} maxLength={1000} onChange={(event) => setNotes(event.target.value)} disabled={busy} rows={3} /></label>
           <fieldset className={styles.paymentChoices} disabled={busy}><legend>Payment method</legend>
-            <label className={styles.paymentChoice}><input type="radio" name="paymentMethod" value="COD" checked={paymentMethod === 'COD'} disabled={!options.paymentOptions?.codEnabled} onChange={() => setPaymentMethod('COD')} /><span><strong>Cash on delivery</strong><small>{options.paymentOptions?.codEnabled ? 'Pay when your order arrives.' : 'Not available for this store.'}</small></span></label>
+            <label className={styles.paymentChoice}><input type="radio" name="paymentMethod" value="COD" checked={paymentMethod === 'COD'} disabled={!options.paymentOptions?.codEnabled} onChange={() => setPaymentMethod('COD')} /><span><strong>{_uiText("Cash on delivery")}</strong><small>{options.paymentOptions?.codEnabled ? 'Pay when your order arrives.' : 'Not available for this store.'}</small></span></label>
             <label className={styles.paymentChoice}><input type="radio" name="paymentMethod" value="ONLINE_TEST" checked={paymentMethod === 'ONLINE_TEST'} disabled={!options.paymentOptions?.onlineEnabled || bag.items.some((item) => item.soldByWeight)} onChange={() => setPaymentMethod('ONLINE_TEST')} /><span><strong>Pay online — test mode</strong><small>{!options.paymentOptions?.onlineEnabled ? 'Not yet connected by the store.' : bag.items.some((item) => item.soldByWeight) ? 'Variable-weight products currently require COD.' : 'Razorpay sandbox. Use test details only; no real money is collected.'}</small></span></label>
           </fieldset>
-          <button className={styles.primary} disabled={busy || slotsLoading || !addressId || !slotId || bag.hasIssues}>{busy ? 'Checking prices and availability…' : 'Review order'} <ArrowRight size={18} aria-hidden="true" /></button>
+          <button className={styles.primary} disabled={busy || slotsLoading || !addressId || !slotId || bag.hasIssues}>{busy ? 'Checking prices and availability…' : _uiText("Review order")} <ArrowRight size={18} aria-hidden="true" /></button>
         </form></>}
-      </section><aside className={styles.card}><p className={styles.eyebrow}>YOUR BAG</p><h2>{bag.items.length} {bag.items.length === 1 ? 'good find' : 'good finds'}</h2><p>Item subtotal <strong>{money(bag.subtotal)}</strong></p><p>Final discounts, delivery fee and included GST appear in your review.</p>{bag.hasIssues && <p className={styles.error}>Some items need attention. <Link href="/cart">Update your bag</Link> before checkout.</p>}<p className={styles.notice}><ShieldCheck size={18} aria-hidden="true" /> Choose an available payment method before reviewing your order. Online payments currently use test mode only.</p></aside></div>}
+      </section><aside className={styles.card}><p className={styles.eyebrow}>YOUR BAG</p><h2>{bag.items.length} {bag.items.length === 1 ? 'good find' : 'good finds'}</h2><p>Item subtotal <strong>{_localizedMoney(bag.subtotal)}</strong></p><p>Final discounts, delivery fee and included GST appear in your review.</p>{bag.hasIssues && <p className={styles.error}>Some items need attention. <Link href="/cart">Update your bag</Link> before checkout.</p>}<p className={styles.notice}><ShieldCheck size={18} aria-hidden="true" /> Choose an available payment method before reviewing your order. Online payments currently use test mode only.</p></aside></div>}
   </main></>;
 }

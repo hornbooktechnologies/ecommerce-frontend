@@ -1,13 +1,16 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { money, photo, type HeroSlide } from '../data/live-catalog';
+import { photo, type HeroSlide } from '../data/live-catalog';
 import { useCatalog } from '../catalog-provider';
 import styles from './monthly-hero.module.css';
 
 export default function MonthlyHero() {
+ const {money: _localizedMoney,t: _uiText}=useUiLocalization();
+
   const { products, configuration } = useCatalog();
   const hero = configuration.hero;
   // Existing stores retain automatic product slides until their first publication.
@@ -53,6 +56,8 @@ export default function MonthlyHero() {
       className={`campaign-carousel campaign-${slide.tone} ${styles.hero}`}
       aria-roledescription="carousel"
       aria-label="Featured campaigns"
+      data-merch-kind={hero&&slide.href.startsWith('/collections/')?'HERO':undefined}
+      data-merch-key={slide.id}
       onMouseEnter={() => setPaused(true)}
       onFocusCapture={(event) => {
         if (!(event.target as HTMLElement).closest('.campaign-playback'))
@@ -64,10 +69,10 @@ export default function MonthlyHero() {
         <h1>{slide.title}</h1>
         <p>{slide.description}</p>
         {slide.showPrice && slide.product && <div className="campaign-price">
-          <strong>{money(slide.product.price)}</strong>
+          <strong>{_localizedMoney(slide.product.price)}</strong>
           {slide.product.mrp > slide.product.price && (
             <>
-              <del>{money(slide.product.mrp)}</del>
+              <del>{_localizedMoney(slide.product.mrp)}</del>
               <b>{Math.round((1 - slide.product.price / slide.product.mrp) * 100)}% OFF</b>
             </>
           )}
@@ -90,7 +95,7 @@ export default function MonthlyHero() {
         {slide.product && <span>
           <small>{slide.product.brand}</small>
           <strong>{slide.product.name}</strong>
-          <b>{slide.product.inStock ? 'In stock' : 'Currently unavailable'}</b>
+          <b>{slide.product.inStock ? _uiText("In stock") : 'Currently unavailable'}</b>
         </span>}
       </Link>
       {slides.length > 1 && (

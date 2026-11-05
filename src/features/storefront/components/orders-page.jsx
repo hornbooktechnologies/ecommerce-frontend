@@ -1,4 +1,6 @@
 'use client';
+import {useLocalization as useUiLocalization} from '@/localization/provider';
+import OrderSellerRatings from './order-seller-ratings';
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -19,6 +21,8 @@ function Badge({ value }) {
 }
 
 export default function OrdersPage({ page = 1, orderId = '' }) {
+ const {t: _uiText}=useUiLocalization();
+
   const [state, setState] = useState({ loading: true, data: null, error: '', status: 0 });
   const refresh = useRef(() => {});
   const errorRef = useRef(null);
@@ -61,30 +65,34 @@ export default function OrdersPage({ page = 1, orderId = '' }) {
 
   const { data, loading, error, status } = state;
   return <><StoreHeader /><main className={styles.page}>
-    <Link className={styles.back} href={orderId ? '/account/orders' : '/account'}><ArrowLeft size={18} aria-hidden="true" />{orderId ? 'All orders' : 'My account'}</Link>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>THE HORNBOOK ACCOUNT</p><h1>{orderId ? 'Your order, step by step.' : 'My orders.'}</h1><p>{orderId ? 'The latest updates recorded by your store.' : 'Every purchase, all in one place.'}</p></div>
-      <button disabled={loading} onClick={() => refresh.current()}><RefreshCw size={18} aria-hidden="true" />{loading ? 'Loading…' : 'Refresh updates'}</button></header>
+    <Link className={styles.back} href={orderId ? '/account/orders' : '/account'}><ArrowLeft size={18} aria-hidden="true" />{orderId ? _uiText("All orders") : _uiText("My account")}</Link>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>THE HORNBOOK ACCOUNT</p><h1>{orderId ? _uiText("Your order, step by step.") : _uiText("My orders.")}</h1><p>{orderId ? 'The latest updates recorded by your store.' : 'Every purchase, all in one place.'}</p></div>
+      <button disabled={loading} onClick={() => refresh.current()}><RefreshCw size={18} aria-hidden="true" />{loading ? _uiText("Loading…") : _uiText("Refresh updates")}</button></header>
     {loading ? <section className={styles.skeleton} role="status" aria-busy="true"><span className={styles.srOnly}>Loading your orders</span>{[1, 2, 3].map((key) => <div key={key} aria-hidden="true" />)}</section>
-      : status === 401 ? <section className={styles.card}><ShieldCheck aria-hidden="true" /><h2>Sign in to view your orders</h2><p>Your order history is private to your customer account.</p><Link className={styles.primary} href="/account/login">Sign in <ArrowRight size={18} aria-hidden="true" /></Link></section>
-      : error ? <section className={styles.card} role="alert" tabIndex={-1} ref={errorRef}><h2>{status === 404 ? 'Order unavailable' : 'We couldn’t load your orders'}</h2><p>{error}</p>{status !== 404 && <button onClick={() => refresh.current()}>Try again</button>} <Link className={styles.back} href="/account/orders">All orders</Link></section>
+      : status === 401 ? <section className={styles.card}><ShieldCheck aria-hidden="true" /><h2>Sign in to view your orders</h2><p>Your order history is private to your customer account.</p><Link className={styles.primary} href="/account/login">{_uiText("Sign in")} <ArrowRight size={18} aria-hidden="true" /></Link></section>
+      : error ? <section className={styles.card} role="alert" tabIndex={-1} ref={errorRef}><h2>{status === 404 ? 'Order unavailable' : 'We couldn’t load your orders'}</h2><p>{error}</p>{status !== 404 && <button onClick={() => refresh.current()}>{_uiText("Try again")}</button>} <Link className={styles.back} href="/account/orders">{_uiText("All orders")}</Link></section>
       : data && (orderId ? <OrderDetails data={data} onExpired={() => refresh.current()} /> : <OrderList data={data} />)}
   </main></>;
 }
 
 function OrderList({ data }) {
+ const {t: _uiText}=useUiLocalization();
+
   const { items, pagination } = data;
   return <>
     {!items.length ? <section className={styles.card}><Package size={32} aria-hidden="true" /><h2>{pagination.page === 1 ? 'Your story starts with your first order.' : 'No orders on this page.'}</h2><p>{pagination.page === 1 ? 'Orders linked to your customer account will appear here.' : 'Return to the first page to see your latest orders.'}</p><Link className={styles.primary} href={pagination.page === 1 ? '/#discover' : '/account/orders'}>{pagination.page === 1 ? 'Explore the collection' : 'First page'}<ArrowRight size={18} aria-hidden="true" /></Link></section>
       : <ul className={styles.orders}>{items.map((order) => <li className={styles.card} key={order.id}>
         <div className={styles.row}><span className={styles.eyebrow}>ORDER · {when(order.placedAt)}</span><Badge value={order.status} /></div>
         <h2>{order.orderNumber}</h2><p>{order.firstItem || 'Order items'}{order.itemCount > 1 ? ` + ${order.itemCount - 1} more` : ''}</p>
-        <div className={styles.orderBottom}><div><strong>{money(order.grandTotal, order.currency)}</strong><small>Payment: {order.paymentMethod === 'ONLINE_TEST' ? 'Test mode · ' : order.paymentMethod === 'COD' ? 'COD · ' : ''}{label(order.paymentStatus)} · Fulfilment: {label(order.fulfillmentStatus)}</small></div><Link className={styles.primary} href={`/account/orders/${order.id}`} aria-label={`View order ${order.orderNumber}`}>View order<ArrowRight size={18} aria-hidden="true" /></Link></div>
+        <div className={styles.orderBottom}><div><strong>{money(order.grandTotal, order.currency)}</strong><small>Payment: {order.paymentMethod === 'ONLINE_TEST' ? 'Test mode · ' : order.paymentMethod === 'COD' ? 'COD · ' : ''}{label(order.paymentStatus)} · Fulfilment: {label(order.fulfillmentStatus)}</small></div><Link className={styles.primary} href={`/account/orders/${order.id}`} aria-label={`View order ${order.orderNumber}`}>{_uiText("View order")}<ArrowRight size={18} aria-hidden="true" /></Link></div>
       </li>)}</ul>}
-    {pagination.total > 0 && <nav className={styles.pagination} aria-label="Order pages"><span>{pagination.total} orders · Page {pagination.page} of {Math.max(1, pagination.totalPages)} · 10 per page</span><div>{pagination.page > 1 && <Link className={styles.back} href={`/account/orders?page=${pagination.page - 1}`}><ArrowLeft size={16} aria-hidden="true" />Previous</Link>}{pagination.page < pagination.totalPages && <Link className={styles.back} href={`/account/orders?page=${pagination.page + 1}`}>Next<ArrowRight size={16} aria-hidden="true" /></Link>}</div></nav>}
+    {pagination.total > 0 && <nav className={styles.pagination} aria-label="Order pages"><span>{pagination.total} orders · Page {pagination.page} {_uiText("of")} {Math.max(1, pagination.totalPages)} · 10 per page</span><div>{pagination.page > 1 && <Link className={styles.back} href={`/account/orders?page=${pagination.page - 1}`}><ArrowLeft size={16} aria-hidden="true" />{_uiText("Previous")}</Link>}{pagination.page < pagination.totalPages && <Link className={styles.back} href={`/account/orders?page=${pagination.page + 1}`}>{_uiText("Next")}<ArrowRight size={16} aria-hidden="true" /></Link>}</div></nav>}
   </>;
 }
 
 function InvoiceDownloads({ orderId, invoices, onExpired }) {
+ const {t: _uiText}=useUiLocalization();
+
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const pending = useRef(null);
@@ -123,7 +131,7 @@ function InvoiceDownloads({ orderId, invoices, onExpired }) {
       if (!controller.signal.aborted) setBusy('');
     }
   }
-  return <section className={styles.card} aria-labelledby="invoice-heading"><h2 id="invoice-heading">Tax invoices</h2>
+  return <section className={styles.card} aria-labelledby="invoice-heading"><h2 id="invoice-heading">{_uiText("Tax invoices")}</h2>
     <p>{invoices.length ? 'Download the issued PDF for each seller. An invoice is not a payment receipt.' : 'No invoice has been issued yet. It will appear here once your store issues it.'}</p>
     {error && <p className={styles.notice} role="alert">{error}</p>}
     <ul className={styles.invoices}>{invoices.map((invoice) => <li key={invoice.id}><div><h3>{invoice.number}</h3><p>{invoice.seller}</p><small>{invoice.date || 'Date not recorded'} · {money(invoice.total, invoice.currency)}</small></div>
@@ -133,10 +141,12 @@ function InvoiceDownloads({ orderId, invoices, onExpired }) {
 }
 
 function OrderDetails({ data, onExpired }) {
+ const {t: _uiText}=useUiLocalization();
+
   const { order, items, address, history, fulfillments, deliverySlot } = data;
   return <>
     <section className={`${styles.card} ${styles.overview}`}><div className={styles.row}><Package size={28} aria-hidden="true" /><Badge value={order.status} /></div><h2>{order.orderNumber}</h2><p>Placed {when(order.placedAt)}</p>
-      <dl className={styles.metrics}><div><dt>Order total</dt><dd>{money(order.grandTotal, order.currency)}</dd></div><div><dt>Payment</dt><dd><Badge value={order.paymentStatus} />{order.paymentMethod === 'ONLINE_TEST' ? ' · Test mode' : order.paymentMethod === 'COD' ? ' · COD' : ''}</dd></div><div><dt>Fulfilment</dt><dd><Badge value={order.fulfillmentStatus} /></dd></div></dl>
+      <dl className={styles.metrics}><div><dt>{_uiText("Order total")}</dt><dd>{money(order.grandTotal, order.currency)}</dd></div><div><dt>{_uiText("Payment")}</dt><dd><Badge value={order.paymentStatus} />{order.paymentMethod === 'ONLINE_TEST' ? ' · Test mode' : order.paymentMethod === 'COD' ? ' · COD' : ''}</dd></div><div><dt>{_uiText("Fulfilment")}</dt><dd><Badge value={order.fulfillmentStatus} /></dd></div></dl>
       {order.paymentMethod === 'ONLINE_TEST' && order.checkoutId && <p>This order uses simulated payments, not real money. <Link className={styles.primary} href={`/checkout?attempt=${order.checkoutId}`}>{order.paymentStatus === 'PAID' ? 'View test payment' : 'Check or resume test payment'}</Link></p>}
       {order.paymentStatus === 'UNPAID' && <p className={styles.notice}>No payment is recorded for this order. Online payment is not available here; contact the store for payment arrangements.</p>}
       {order.status === 'CANCELLED' && <p className={styles.notice}>This order has been cancelled. The payment and refund amounts below reflect the store’s recorded updates.</p>}
@@ -145,10 +155,11 @@ function OrderDetails({ data, onExpired }) {
       <InvoiceDownloads orderId={order.id} invoices={data.invoices || []} onExpired={onExpired} />
       <section className={styles.card} aria-labelledby="after-sales-heading"><h2 id="after-sales-heading">Cancellations, returns and exchanges</h2><OrderAfterSales orderId={order.id} onChanged={onExpired} onExpired={onExpired} /></section>
       <section className={styles.card} aria-labelledby="product-reviews-heading"><h2 id="product-reviews-heading">Review your purchases</h2><OrderReviews orderId={order.id} items={items} onExpired={onExpired} /></section>
-      <section className={styles.card}><h2>Items in your order</h2><ul className={styles.items}>{items.map((item) => <li key={item.id}><div><h3>{item.productName}</h3><p>{item.variantName} · {item.sku}</p><small>Sold by {item.seller} · {label(item.status)}</small><p>{item.quantity} × {money(item.unitPrice, order.currency)}</p></div><strong>{money(item.lineTotal, order.currency)}</strong></li>)}</ul>
+      <section className={styles.card} aria-labelledby="seller-ratings-heading"><h2 id="seller-ratings-heading">{_uiText("Rate your sellers")}</h2><OrderSellerRatings key={order.id} orderId={order.id} onExpired={onExpired}/></section>
+      <section className={styles.card}><h2>{_uiText("Items in your order")}</h2><ul className={styles.items}>{items.map((item) => <li key={item.id}><div><h3>{item.productName}</h3><p>{item.variantName} · {item.sku}</p><small>{_uiText("Sold by")} {item.seller} · {label(item.status)}</small><p>{item.quantity} × {money(item.unitPrice, order.currency)}</p></div><strong>{money(item.lineTotal, order.currency)}</strong></li>)}</ul>
         <dl className={styles.totals}>{[['Subtotal', order.subtotal], ['Discount', -order.discountTotal], ['Delivery', order.shippingTotal], ['Included item GST', order.taxTotal], ...(order.roundingTotal ? [['Rounding', order.roundingTotal]] : []), ['Total', order.grandTotal], ...(order.refundedTotal ? [['Refund recorded', order.refundedTotal]] : [])].map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{money(value, order.currency)}</dd></div>)}</dl>
       </section>
-      <section className={styles.card}><h2><Truck size={22} aria-hidden="true" /> Fulfilment updates</h2><p>Updates are recorded by the store, not a live courier feed. Refresh to check for changes.</p>
+      <section className={styles.card}><h2><Truck size={22} aria-hidden="true" /> {_uiText("Fulfilment updates")}</h2><p>Updates are recorded by the store, not a live courier feed. Refresh to check for changes.</p>
         {!fulfillments.length ? <p className={styles.notice}>{order.status === 'CANCELLED' ? 'No fulfilment was recorded.' : 'Your store has not started fulfilment yet.'}</p> : fulfillments.map((shipment) => <article className={styles.shipment} key={`${shipment.id}-${shipment.shipmentId || 'pending'}`}><div className={styles.row}><h3>{shipment.seller}</h3><Badge value={shipment.status} /></div>
           {shipment.trackingNumber && <p><strong>Tracking reference:</strong> {shipment.trackingNumber}{shipment.carrier ? ` · ${shipment.carrier}` : ''}</p>}
           {shipment.shipmentStatus && <p>Shipment: {label(shipment.shipmentStatus)}</p>}
@@ -156,10 +167,10 @@ function OrderDetails({ data, onExpired }) {
         </article>)}
       </section>
     </div><aside>
-      <section className={styles.card}><h2><MapPin size={22} aria-hidden="true" /> Delivery details</h2><address><strong>{address.contactName}</strong><p>{[address.line1, address.line2, address.landmark, address.city, address.stateName, address.postalCode, address.countryCode].filter(Boolean).join(', ') || 'No delivery address recorded.'}</p></address>
+      <section className={styles.card}><h2><MapPin size={22} aria-hidden="true" /> {_uiText("Delivery details")}</h2><address><strong>{address.contactName}</strong><p>{[address.line1, address.line2, address.landmark, address.city, address.stateName, address.postalCode, address.countryCode].filter(Boolean).join(', ') || 'No delivery address recorded.'}</p></address>
         {deliverySlot && <div className={styles.slot}><strong>Selected delivery slot</strong><p>{when(deliverySlot.startsAt)}<br />to {when(deliverySlot.endsAt)}</p><Badge value={deliverySlot.status} /><p>This is the requested slot, not a guaranteed delivery estimate.</p></div>}
       </section>
-      <section className={styles.card}><h2><Clock3 size={22} aria-hidden="true" /> Order activity</h2><ol className={styles.timeline}>{history.length ? history.map((event) => <li key={event.id}><span className={styles.dot} aria-hidden="true" /><div><strong>{label(event.type)} · {label(event.status)}</strong><small>{when(event.at)}</small></div></li>) : <li><span className={styles.dot} aria-hidden="true" /><div><strong>Order placed</strong><small>{when(order.placedAt)}</small></div></li>}</ol><small>Latest order update: {when(order.updatedAt)}</small></section>
+      <section className={styles.card}><h2><Clock3 size={22} aria-hidden="true" /> {_uiText("Order activity")}</h2><ol className={styles.timeline}>{history.length ? history.map((event) => <li key={event.id}><span className={styles.dot} aria-hidden="true" /><div><strong>{label(event.type)} · {label(event.status)}</strong><small>{when(event.at)}</small></div></li>) : <li><span className={styles.dot} aria-hidden="true" /><div><strong>Order placed</strong><small>{when(order.placedAt)}</small></div></li>}</ol><small>Latest order update: {when(order.updatedAt)}</small></section>
     </aside></div>
   </>;
 }

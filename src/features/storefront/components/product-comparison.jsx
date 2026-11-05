@@ -1,4 +1,5 @@
 'use client';
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
@@ -10,6 +11,8 @@ const Context=createContext(null);
 const itemKey=item=>`${item.slug}~${item.offerId}`;
 export const comparisonUrl=items=>`/compare?items=${encodeURIComponent(items.map(itemKey).join(','))}`;
 export function ComparisonProvider({children}){
+ const {t: _uiText}=useUiLocalization();
+
  const {configuration}=useCatalog();
  const pathname=usePathname();
  const scope=configuration.appearance?.scope;
@@ -31,9 +34,11 @@ export function ComparisonProvider({children}){
  },[currentItems,remove,commit]);
  const value=useMemo(()=>({items,toggle,remove,clear:()=>commit([]),ready:state.key===key}),[items,toggle,remove,commit,state.key,key]);
  const showTray=items.length>0&&pathname!=='/compare';
- return <Context.Provider value={value}>{children}{showTray&&<aside className={styles.tray} aria-label="Selected products for comparison"><div><strong><GitCompareArrows size={18} aria-hidden="true"/>Compare products · {items.length}/4</strong><div className={styles.chips}>{items.map(item=><button type="button" key={item.id} title={`Remove ${item.name}`} aria-label={`Remove ${item.name} from comparison`} onClick={()=>remove(item.id)}>{item.name}<X size={14} aria-hidden="true"/></button>)}</div></div><div className={styles.controls}><button type="button" onClick={()=>commit([])}>Clear</button>{items.length>=2?<Link href={comparisonUrl(items)}>Compare now</Link>:<span>Choose one more product</span>}</div></aside>}{showTray&&<div className={styles.clearance} aria-hidden="true"/>}</Context.Provider>;
+ return <Context.Provider value={value}>{children}{showTray&&<aside className={styles.tray} aria-label="Selected products for comparison"><div><strong><GitCompareArrows size={18} aria-hidden="true"/>Compare products · {items.length}/4</strong><div className={styles.chips}>{items.map(item=><button type="button" key={item.id} title={`Remove ${item.name}`} aria-label={`Remove ${item.name} from comparison`} onClick={()=>remove(item.id)}>{item.name}<X size={14} aria-hidden="true"/></button>)}</div></div><div className={styles.controls}><button type="button" onClick={()=>commit([])}>{_uiText("Clear")}</button>{items.length>=2?<Link href={comparisonUrl(items)}>Compare now</Link>:<span>Choose one more product</span>}</div></aside>}{showTray&&<div className={styles.clearance} aria-hidden="true"/>}</Context.Provider>;
 }
 export function useComparison(){const value=useContext(Context);if(!value)throw Error('ComparisonProvider missing');return value;}
-export function CompareButton({product}){const {items,toggle,ready}=useComparison(),current=items.find(item=>item.id===product.id),selected=current?.offerId===product.offerId;
- return <button className={styles.compareButton} type="button" aria-pressed={selected} disabled={!ready} onClick={()=>toggle(product)} aria-label={`${selected?'Remove from':current?'Update':'Add to'} comparison: ${product.name}`}><GitCompareArrows size={16} aria-hidden="true"/>{selected?'In comparison':current?'Update comparison':'Compare'}</button>;
+export function CompareButton({product}){
+ const {t: _uiText}=useUiLocalization();
+const {items,toggle,ready}=useComparison(),current=items.find(item=>item.id===product.id),selected=current?.offerId===product.offerId;
+ return <button className={styles.compareButton} type="button" aria-pressed={selected} disabled={!ready} onClick={()=>toggle(product)} aria-label={`${selected?'Remove from':current?'Update':'Add to'} comparison: ${product.name}`}><GitCompareArrows size={16} aria-hidden="true"/>{selected?'In comparison':current?'Update comparison':_uiText("Compare")}</button>;
 }

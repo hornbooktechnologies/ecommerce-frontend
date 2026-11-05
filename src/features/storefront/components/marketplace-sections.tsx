@@ -55,7 +55,7 @@ function BrandPromise() {
 
 function ManagedSections({ sections }: { sections: HomepageSection[] }) {
   return sections.map((section) => section.key === 'BANNER' ? (
-    <section key={section.key} className={`fashion-banner ${styles.banner}`} data-homepage-section={section.key}>
+    <section key={section.key} className={`fashion-banner ${styles.banner}`} data-homepage-section={section.key} data-merch-kind={section.href.startsWith('/collections/')?'BANNER':undefined} data-merch-key={section.key}>
       <div><span>{section.eyebrow}</span><h2>{section.title}</h2><p>{section.subtitle}</p>
         <Link href={section.href}>{section.ctaLabel}<ArrowRight size={16} aria-hidden="true" /></Link>
         {section.badgeText && <p className={styles.badge}>{section.badgeText}</p>}
@@ -63,7 +63,7 @@ function ManagedSections({ sections }: { sections: HomepageSection[] }) {
       <img src={photo(section.imageUrl, 1200)} alt={section.altText} loading="lazy" decoding="async" />
     </section>
   ) : (
-    <div key={section.key} className={styles.shelf} data-homepage-section={section.key}>
+    <div key={section.key} className={styles.shelf} data-homepage-section={section.key} data-merch-kind={section.collectionSlug?'SHELF':undefined} data-merch-key={section.key}>
       <Shelf id={section.key === 'DEALS' ? 'deal-zone' : undefined} title={section.title} subtitle={section.subtitle}
         icon={section.key === 'DEALS' ? 'deal' : section.key === 'FRESH' ? 'new' : 'hot'}
         items={section.items} href={section.viewAllHref} linkLabel={section.viewAllLabel} />

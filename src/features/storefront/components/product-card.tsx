@@ -1,17 +1,16 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import Link from 'next/link';
 import { Heart, Plus, Star } from 'lucide-react';
-import {
-  money,
-  photo,
-  type Product,
-} from '@/features/storefront/data/live-catalog';
+import { photo, type Product } from '@/features/storefront/data/live-catalog';
 import { useStore } from '@/features/storefront/store';
 import styles from './product-card.module.css';
 import { CompareButton } from './product-comparison';
 
 export default function ProductCard({ product }: { product: Product }) {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const toggleWish = useStore((state) => state.toggleWish);
   const saved = useStore((state) => state.wishlist.includes(product.id));
   const wishBusy = useStore((state) => state.wishBusy);
@@ -48,7 +47,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </button>
         <Link className="quick-add" href={href}>
           <Plus size={15} />{' '}
-          {product.inStock ? 'Choose options' : 'View unavailable item'}
+          {product.inStock ? _uiText("Choose options") : _uiText("View unavailable item")}
         </Link>
       </div>
       <div className="product-info">
@@ -64,13 +63,13 @@ export default function ProductCard({ product }: { product: Product }) {
             <span>({product.reviews})</span>
           </div>
         ) : (
-          <div className="rating rating-empty">No reviews yet</div>
+          <div className="rating rating-empty">{_uiText("No reviews yet")}</div>
         )}
         <div className="price">
-          <strong>{money(product.price)}</strong>
+          <strong>{_localizedMoney(product.price)}</strong>
           {product.mrp > product.price && (
             <>
-              <del>{money(product.mrp)}</del>
+              <del>{_localizedMoney(product.mrp)}</del>
               <span>
                 {Math.round((1 - product.price / product.mrp) * 100)}% off
               </span>

@@ -1,5 +1,6 @@
 'use client';
 
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +9,8 @@ import { newsletterRequest } from '../newsletter-client';
 import styles from './newsletter.module.css';
 
 export default function NewsletterForm() {
+ const {t: _uiText}=useUiLocalization();
+
   const { configuration } = useCatalog();
   const name = configuration.store.tenantName || configuration.store.name;
   const id = useId(); const requestRef = useRef(null); const errorRef = useRef(null);
@@ -31,9 +34,9 @@ export default function NewsletterForm() {
     <div className={styles.intro}><Mail size={28} aria-hidden="true" /><div><h2 id={`${id}-heading`}>Good things. In your inbox.</h2><p>New finds, fresh collections and offers from {name}.</p></div></div>
     {message ? <div className={styles.success} role="status"><CheckCircle2 size={22} aria-hidden="true" /><div><strong>Check your email</strong><p>{message}</p><button type="button" className={styles.textButton} onClick={() => setMessage('')}>Use another email or request a new link</button></div></div>
       : <form className={styles.form} onSubmit={submit} aria-busy={busy}>
-        <label htmlFor={`${id}-email`}>Email address <span>(required)</span></label>
+        <label htmlFor={`${id}-email`}>{_uiText("Email address")} <span>(required)</span></label>
         <div className={styles.inputRow}><input id={`${id}-email`} type="email" autoComplete="email" inputMode="email" required maxLength={254} placeholder="you@example.com" value={email} disabled={busy} onChange={(event) => setEmail(event.target.value)} aria-describedby={`${id}-consent`} />
-          <button type="submit" className={styles.primary} disabled={busy || !consent}>{busy ? 'Sending…' : 'Subscribe'}<ArrowRight size={18} aria-hidden="true" /></button></div>
+          <button type="submit" className={styles.primary} disabled={busy || !consent}>{busy ? 'Sending…' : _uiText("Subscribe")}<ArrowRight size={18} aria-hidden="true" /></button></div>
         <label className={styles.consent} id={`${id}-consent`}><input type="checkbox" required checked={consent} disabled={busy} onChange={(event) => setConsent(event.target.checked)} /><span>I agree to receive new arrivals, collections and offers from {name}. I can unsubscribe at any time using the link in my email.</span></label>
         <p className={styles.help}>We will email a confirmation link. You are not subscribed until you confirm.</p>
         {error ? <p className={styles.error} role="alert" tabIndex={-1} ref={errorRef}>{error}</p> : null}

@@ -1,4 +1,5 @@
 'use client';
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useState } from 'react';
 import ProductCard from './product-card';
 import { useCatalogQuery } from '../catalog-provider';
@@ -9,6 +10,8 @@ export default function CatalogResults({ filters, currentPage, onPageChange }: P
   return <Results key={queryString(filters)} filters={filters} currentPage={currentPage} onPageChange={onPageChange} />;
 }
 function Results({ filters, currentPage, onPageChange }: Props) {
+ const {t: _uiText}=useUiLocalization();
+
   const [localPage, setLocalPage] = useState(1);
   const page = currentPage ?? localPage;
   const setPage = onPageChange || setLocalPage;
@@ -34,8 +37,7 @@ function Results({ filters, currentPage, onPageChange }: Props) {
       <div className="empty-state" role="alert">
         <p>{error}</p>
         <button className="outline-button" onClick={retry}>
-          Try again
-        </button>
+          {_uiText("Try again")} </button>
       </div>
     );
   if (!data?.items.length)
@@ -53,7 +55,7 @@ function Results({ filters, currentPage, onPageChange }: Props) {
   return (
     <>
       <p className="search-summary" role="status">
-        {data.total} {data.total === 1 ? 'product' : 'products'} · Page {data.page} of {data.totalPages}
+        {data.total} {data.total === 1 ? 'product' : _uiText("products")} · Page {data.page} {_uiText("of")} {data.totalPages}
       </p>
       <div className="category-product-grid">
         {data.items.map((product) => (
@@ -66,18 +68,16 @@ function Results({ filters, currentPage, onPageChange }: Props) {
           disabled={page <= 1}
           onClick={() => setPage(page - 1)}
         >
-          Previous
-        </button>
+          {_uiText("Previous")} </button>
         <span>
-          Page {page} of {data.totalPages}
+          {_uiText("Page")} {page} {_uiText("of")} {data.totalPages}
         </span>
         <button
           className="outline-button"
           disabled={page >= data.totalPages}
           onClick={() => setPage(page + 1)}
         >
-          Next
-        </button>
+          {_uiText("Next")} </button>
       </nav>
     </>
   );

@@ -1,8 +1,11 @@
 'use client';
 
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useId } from 'react';
-import { Check } from 'lucide-react';
-import { money } from '../data/live-catalog';
+import { Check,ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
+import SellerRatingSummary from './seller-rating-summary';
+
 import styles from './variant-seller-picker.module.css';
 
 const colourKey = (item) => item.colorId || item.color || '__unspecified__';
@@ -27,6 +30,8 @@ function colourStyle(value) {
 }
 
 export default function VariantSellerPicker({ variants, selected, onSelect, disabled = false }) {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const id = useId();
   const physical = uniqueBy(variants, (item) => item.id);
   const colours = uniqueBy(physical, colourKey);
@@ -43,7 +48,7 @@ export default function VariantSellerPicker({ variants, selected, onSelect, disa
   }
   return <div className={styles.picker}>
     {colours.some((item) => item.color) ? <fieldset className={styles.axis} disabled={disabled}>
-      <legend>Colour <strong>{selected.color || 'Not specified'}</strong></legend>
+      <legend>{_uiText("Colour")} <strong>{selected.color || 'Not specified'}</strong></legend>
       <div className={styles.choices}>{colours.map((colour) => {
         const swatch = colourStyle(colour.colorSwatch);
         return <button type="button" key={colourKey(colour)} className={styles.colourChoice}
@@ -57,7 +62,7 @@ export default function VariantSellerPicker({ variants, selected, onSelect, disa
       })}</div>
     </fieldset> : null}
     {sizes.some((item) => item.size) ? <fieldset className={styles.axis} disabled={disabled}>
-      <legend>Size <strong>{selected.size || 'Not specified'}</strong></legend>
+      <legend>{_uiText("Size")} <strong>{selected.size || 'Not specified'}</strong></legend>
       <div className={styles.choices}>{sizes.map((size) => <button type="button" key={size.size || '__unspecified__'} aria-pressed={(size.size || '') === (selected.size || '')}
         onClick={() => choose(variants.filter((item) => colourKey(item) === colourKey(selected) && (item.size || '') === (size.size || '')))}>{size.size || 'Not specified'}</button>)}</div>
     </fieldset> : null}
@@ -71,14 +76,14 @@ export default function VariantSellerPicker({ variants, selected, onSelect, disa
       <p className={styles.hint}>Offers below are for the same selected colour, size and product option.</p>
       <div className={styles.offerList}>{offers.map((offer) => {
         const canBuy = available(offer), active = offer.offerId === selected.offerId;
-        return <label className={styles.offer} key={offer.offerId} data-selected={active || undefined} data-unavailable={!canBuy || undefined}>
+        return <div className={styles.offerRow} key={offer.offerId}><label className={styles.offer} data-selected={active || undefined} data-unavailable={!canBuy || undefined}>
           <input className={styles.radio} type="radio" name={`${id}-seller`} value={offer.offerId} checked={active} disabled={disabled || !canBuy} onChange={() => onSelect(offer.offerId)} />
-          <span className={styles.identity}><strong>{offer.sellerName || 'Store seller'}</strong><span>{canBuy ? 'In stock' : 'Currently unavailable'}{active ? ' · Selected' : ''}</span></span>
-          <span className={styles.price}><strong>{money(offer.price)}</strong>{offer.mrp > offer.price ? <del>MRP {money(offer.mrp)}</del> : null}<span>{offer.includesTax ? 'Includes tax' : 'Tax at checkout'}</span>{offer.soldByWeight ? <span>per {offer.uom}</span> : null}</span>
-        </label>;
+          <span className={styles.identity}><strong>{offer.sellerName || 'Store seller'}</strong><span>{canBuy ? _uiText("In stock") : 'Currently unavailable'}{active ? ' · Selected' : ''}</span><SellerRatingSummary rating={offer.sellerRating}/></span>
+          <span className={styles.price}><strong>{_localizedMoney(offer.price)}</strong>{offer.mrp > offer.price ? <del>MRP {_localizedMoney(offer.mrp)}</del> : null}<span>{offer.includesTax ? _uiText("Includes tax") : _uiText("Tax at checkout")}</span>{offer.soldByWeight ? <span>per {offer.uom}</span> : null}</span>
+        </label>{offer.sellerProfileHref&&<Link href={offer.sellerProfileHref} prefetch={false} className={styles.profileLink} aria-label={`View profile for ${offer.sellerName}`} aria-disabled={disabled||undefined} tabIndex={disabled?-1:undefined} onClick={event=>{if(disabled)event.preventDefault();}}>Seller profile<ArrowUpRight size={14} aria-hidden="true"/></Link>}</div>;
       })}</div>
       <p id={`${id}-help`} className={styles.hint}>Your chosen seller is added to the bag. Stock and prices are checked again by the server; changing colour or size may select a different eligible seller.</p>
     </fieldset>
-    <p className={styles.selection} role="status">Selected: {[selected.color, selected.size, selected.name].filter(Boolean).join(' · ')} — {selected.sellerName} — {money(selected.price)}</p>
+    <p className={styles.selection} role="status">Selected: {[selected.color, selected.size, selected.name].filter(Boolean).join(' · ')} — {selected.sellerName} — {_localizedMoney(selected.price)}</p>
   </div>;
 }

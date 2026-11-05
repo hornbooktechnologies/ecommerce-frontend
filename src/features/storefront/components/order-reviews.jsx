@@ -1,5 +1,6 @@
 'use client';
 
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,6 +13,8 @@ const statusText = {
 };
 
 function ItemReview({ orderId, item, onExpired }) {
+ const {t: _uiText}=useUiLocalization();
+
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(item.review);
   const [busy, setBusy] = useState(false);
@@ -67,7 +70,7 @@ function ItemReview({ orderId, item, onExpired }) {
 
   return <article className={styles.item} aria-labelledby={`${uid}-product`}>
     <div className={styles.heading}><div><h3 id={`${uid}-product`}>{item.productName}</h3><p>{item.variantName} · {item.sku}</p></div>
-      {!saved && !open && <button ref={buttonRef} type="button" onClick={() => setOpen(true)}><Star size={17} aria-hidden="true" />Write a review</button>}
+      {!saved && !open && <button ref={buttonRef} type="button" onClick={() => setOpen(true)}><Star size={17} aria-hidden="true" />{_uiText("Write a review")}</button>}
     </div>
     {saved ? <><p ref={feedbackRef} tabIndex={-1} role="status" className={styles.feedback}>Your review: {statusText[saved.status] || 'Received'}. {saved.status === 'PENDING' && 'It will appear on the product page after approval.'}</p><ReviewPhotos reviewId={saved.id} productName={item.productName} reviewStatus={saved.status} onExpired={onExpired}/></>
       : open && <form onSubmit={submit} aria-label={`Review ${item.productName}`} aria-busy={busy}>
@@ -91,7 +94,7 @@ function ItemReview({ orderId, item, onExpired }) {
             aria-invalid={Boolean(fields.review)} aria-describedby={`${uid}-help${fields.review ? ` ${uid}-review-error` : ''}`} />
           <small id={`${uid}-help`}>10–3,000 characters. Describe the product, not personal contact or payment information. Your first name will be shown with an approved review.</small>
           {fields.review && <span id={`${uid}-review-error`} className={styles.error}>{fields.review}</span>}
-          <div className={styles.actions}><button type="button" onClick={() => { setOpen(false); setError(''); requestAnimationFrame(() => buttonRef.current?.focus()); }}>Cancel</button>
+          <div className={styles.actions}><button type="button" onClick={() => { setOpen(false); setError(''); requestAnimationFrame(() => buttonRef.current?.focus()); }}>{_uiText("Cancel")}</button>
             <button type="submit" className={styles.submit}>{busy ? 'Submitting…' : 'Submit review'}</button></div>
         </fieldset>
       </form>}

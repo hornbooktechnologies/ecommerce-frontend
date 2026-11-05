@@ -1,15 +1,15 @@
+import {LocalizedText} from '@/localization/provider';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   CatalogError,
   getProduct,
-  getProducts,
 } from '@/features/storefront/server-catalog';
 import StoreHeader from '@/features/storefront/components/store-header';
 import ProductActions from '@/features/storefront/components/product-actions';
-import ProductCard from '@/features/storefront/components/product-card';
 import ProductQuestions from '@/features/storefront/components/product-questions';
 import ReviewPhotoGallery from '@/features/storefront/components/review-photo-gallery';
+import ShoppingDiscovery from '@/features/storefront/components/shopping-discovery';
 
 async function load(slug: string) {
   try {
@@ -44,11 +44,6 @@ export default async function ProductPage({
   const specificationRows = [...structured.map(field=>({key:field.code,label:field.label,value:field.displayValue,group:field.group})),
     ...Object.entries(product.specifications).filter(([label])=>!structured.some(field=>field.label===label)).map(([label,value])=>({key:`legacy-${label}`,label,value,group:''}))];
   const initialOfferId = typeof requestedOffer === 'string' && product.variants.some((item) => item.offerId === requestedOffer) ? requestedOffer : product.offerId;
-  const related = (
-    await getProducts({ category: product.categorySlug, pageSize: 6 })
-  ).items
-    .filter((item) => item.id !== product.id)
-    .slice(0, 5);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -80,7 +75,7 @@ export default async function ProductPage({
       <StoreHeader />
       <main className="product-page pdp-new">
         <nav className="breadcrumbs">
-          <Link href="/">Home</Link>
+          <Link href="/"><LocalizedText text="Home" /></Link>
           <span>/</span>
           <Link href={`/c/${product.categorySlug}`}>{product.category}</Link>
           <span>/</span>
@@ -124,22 +119,13 @@ export default async function ProductPage({
           )}
         </section>
         <ProductQuestions key={product.slug} productSlug={product.slug}/>
-        {related.length > 0 && (
-          <section className="live-product-section">
-            <h2>More in {product.category}</h2>
-            <div className="category-product-grid">
-              {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
-              ))}
-            </div>
-          </section>
-        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(schema).replace(/</g, '\\u003c'),
           }}
         />
+        <ShoppingDiscovery currentProductId={product.id}/>
       </main>
     </>
   );

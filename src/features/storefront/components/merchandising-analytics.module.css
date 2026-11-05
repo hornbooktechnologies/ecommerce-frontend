@@ -1,0 +1,55 @@
+.consent {
+  font-size: calc(14px * var(--theme-text-scale, 1));
+  max-width: 620px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.consent summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: list-item;
+  padding: 12px 0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.consent form {
+  padding: 16px 0;
+  display: grid;
+  gap: 14px;
+}
+.consent p {
+  margin: 0;
+}
+.consent label {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  min-height: 44px;
+  font-weight: 600;
+}
+.consent input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin-top: 4px;
+  accent-color: var(--olive);
+}
+.consent button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--theme-button, var(--olive));
+  color: var(--theme-button-ink, #fff);
+  font: inherit;
+  cursor: pointer;
+  justify-self: start;
+}
+.consent button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.consent :is(button, input, summary):focus-visible {
+  outline: 2px solid var(--olive);
+  outline-offset: 4px;
+}

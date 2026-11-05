@@ -9,7 +9,7 @@ export function inboxProxyRoute(path, method, search) {
     const filter = params.get('filter') || 'ALL', page = params.get('page') || '1', pageSize = params.get('pageSize') || '10';
     if (!['ALL', 'UNREAD'].includes(filter) || !/^[1-9]\d{0,4}$/.test(page) || Number(page) > 10000 || !['10', '20', '50'].includes(pageSize)) return null;
     const category = params.get('category') || 'ALL', search = (params.get('search') || '').trim();
-    if (!['ALL', 'ORDERS', 'RETURNS', 'PAYMENTS', 'WARRANTIES', 'QUESTIONS'].includes(category) || search.length > 100) return null;
+    if (!['ALL', 'ORDERS', 'RETURNS', 'PAYMENTS', 'WARRANTIES', 'QUESTIONS', 'SHOPPING'].includes(category) || search.length > 100) return null;
     const query = new URLSearchParams({ filter, page, pageSize });
     if (category !== 'ALL') query.set('category', category);
     if (search) query.set('search', search);
@@ -23,6 +23,8 @@ export function inboxProxyRoute(path, method, search) {
 
 export function customerNotificationDestination(item) {
   const target = item?.target;
+  if(target?.type==='SHOPPING_REMINDER'&&uuid.test(target.id||''))return item.kind==='CART_REMINDER'?'/cart':item.kind==='WISHLIST_REMINDER'?'/wishlist':null;
+  if(target?.type==='SHOPPING_ALERT'&&uuid.test(target.id||''))return '/account/alerts';
   if(target?.type==='PRODUCT_QUESTION'&&uuid.test(target.id||''))return `/account/questions?question=${encodeURIComponent(target.id)}`;
   if (target?.type === 'ORDER' && uuid.test(target.id || '')) return `/account/orders/${target.id}`;
   if (target?.type === 'RETURN' && uuid.test(target.orderId || '')) return `/account/orders/${target.orderId}#after-sales-heading`;

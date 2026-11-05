@@ -22,9 +22,11 @@ async function handler(request, context) {
   const inboxRoute = inboxProxyRoute(path, request.method, request.nextUrl.search);
   const isCheckout = path.length === 2 && path[0] === 'checkout' && ['options', 'quote', 'place', 'read', 'pay', 'verify'].includes(path[1]);
   const isOrders = path.length === 2 && path[0] === 'orders' && ['list', 'read', 'invoice', 'review', 'after-sales', 'cancel', 'return'].includes(path[1]);
+  const isShopping=(path.length===2&&path[0]==='reminders'&&['settings','consent'].includes(path[1]))||(path.length===1&&path[0]==='discovery')||(path.length===2&&((path[0]==='history'&&['view','clear','settings'].includes(path[1]))||(path[0]==='shopping-alerts'&&['list','offer','subscribe','cancel'].includes(path[1]))));
+  const isSellerRatings=path.length===2&&path[0]==='seller-ratings'&&['list','submit'].includes(path[1]);
   const isQuestions = path.length===2 && path[0]==='questions' && ['ask','list','withdraw'].includes(path[1]);
   const isInvoice = key === 'orders/invoice';
-  const methods = isQuestions || isOrders || isCheckout || key === 'cart/sync' || key === 'wishlist/sync' ? ['POST'] : path.length === 1 ? routes[key] : path.length === 2 && path[0] === 'addresses' && /^[0-9a-f-]{36}$/i.test(path[1]) ? ['PUT', 'DELETE'] : null;
+  const methods = isShopping ? (key==='history/settings'?['PUT']:['POST']) : isSellerRatings || isQuestions || isOrders || isCheckout || key === 'cart/sync' || key === 'wishlist/sync' ? ['POST'] : path.length === 1 ? routes[key] : path.length === 2 && path[0] === 'addresses' && /^[0-9a-f-]{36}$/i.test(path[1]) ? ['PUT', 'DELETE'] : null;
   const isCart = path[0] === 'cart';
   const isWishlist = path[0] === 'wishlist';
   if (!inboxRoute && (!methods?.includes(request.method) || request.nextUrl.search)) return jsonError('Not found.', 404);
@@ -52,11 +54,12 @@ async function handler(request, context) {
   const store = encodeURIComponent(process.env.STOREFRONT_STORE_CODE || 'MAIN');
   try {
     const token = request.cookies.get(cookieName)?.value;
+    const merchToken=request.headers.get('sec-gpc')==='1'||request.headers.get('dnt')==='1'?null:request.cookies.get('commerce_merchandising')?.value;
     const guestToken = request.cookies.get(cartCookieName)?.value;
     const wishlistToken = request.cookies.get(wishlistCookieName)?.value;
     const upstream = await fetch(`${origin}/${tenant}/stores/${store}/${isCart || isCheckout || isWishlist ? '' : 'account/'}${path.map(encodeURIComponent).join('/')}${inboxRoute?.query || ''}`, {
       method: request.method, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(30000),
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isCart && guestToken ? { 'x-cart-token': guestToken } : {}), ...(isWishlist && wishlistToken ? { 'x-wishlist-token': wishlistToken } : {}) }, body,
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...((isCart||isCheckout)&&/^[a-f0-9]{64}$/.test(merchToken||'')?{'x-merchandising-token':merchToken}:{}), ...(isCart && guestToken ? { 'x-cart-token': guestToken } : {}), ...(isWishlist && wishlistToken ? { 'x-wishlist-token': wishlistToken } : {}) }, body,
     });
     if (isInvoice && upstream.ok) {
       if (upstream.headers.get('content-type')?.split(';')[0] !== 'application/pdf') return jsonError('The invoice could not be downloaded. Please try again.', 502);
@@ -85,6 +88,7 @@ async function handler(request, context) {
     if (upstream.ok && ['logout', 'password', 'reset-password'].includes(key)) response.cookies.set(cartCookieName, '', { ...cookie, maxAge: 0 });
     if (upstream.ok && key === 'login' && /^[a-f0-9]{64}$/.test(sessionToken || '')) response.cookies.set(cookieName, sessionToken, { ...cookie, maxAge: 3600 });
     if ((upstream.ok && ['logout', 'password', 'reset-password'].includes(key)) || (upstream.status === 401 && key !== 'login')) response.cookies.set(cookieName, '', { ...cookie, maxAge: 0 });
+    if(upstream.ok&&['logout','password','reset-password'].includes(key))response.cookies.set('commerce_merchandising','',{...cookie,path:'/api',maxAge:0});
     return response;
   } catch { return jsonError('Store services are temporarily unavailable. Please try again.', 503); }
 }

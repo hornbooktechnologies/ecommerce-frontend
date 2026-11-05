@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,7 +28,7 @@ import {
   UserRound,
   Package,
 } from 'lucide-react';
-import { photo, money, slugify } from '@/features/storefront/data/live-catalog';
+import { photo, slugify } from '@/features/storefront/data/live-catalog';
 import { useCatalog } from '@/features/storefront/catalog-provider';
 import CatalogResults from './catalog-results';
 import { useStore } from '@/features/storefront/store';
@@ -40,6 +41,8 @@ import DeliveryChecker from './delivery-checker';
 import headerStyles from './homepage-header.module.css';
 import CustomerInbox from './customer-inbox';
 import NewsletterForm from './newsletter-form';
+import ShoppingDiscovery from './shopping-discovery';
+import {LocalizationControls} from '@/localization/provider';
 const icons = [
   Shirt,
   Headphones,
@@ -51,6 +54,8 @@ const icons = [
   BookOpen,
 ];
 export default function Storefront() {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const customer = useCustomerSummary();
   const { categories, products } = useCatalog();
   const [category, setCategory] = useState('All categories'),
@@ -125,19 +130,19 @@ export default function Storefront() {
         </div>
         <div className="search">
           <select
-            aria-label="Search category"
+            aria-label={_uiText("Search category")}
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option>All categories</option>
+            <option value="All categories">{_uiText("All categories")}</option>
             {categories.map((c) => (
               <option key={c.name}>{c.name}</option>
             ))}
           </select>
           <input
             ref={searchRef}
-            aria-label="Search all products"
-            placeholder="Search products, brands and categories"
+            aria-label={_uiText("Search all products")}
+            placeholder={_uiText("Search products, brands and categories")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -160,7 +165,7 @@ export default function Storefront() {
                     {p.name}
                     <small>{p.category}</small>
                   </span>
-                  <strong>{money(p.price)}</strong>
+                  <strong>{_localizedMoney(p.price)}</strong>
                 </Link>
               ))}
               <button onClick={() => browse(category)}>
@@ -179,8 +184,7 @@ export default function Storefront() {
           >
             <UserRound size={20} />
             <span>
-              <small>{customer.email ? `Hello, ${customer.firstName}` : 'Hello, sign in'}</small>Account
-            </span>
+              <small>{customer.email ? `Hello, ${customer.firstName}` : 'Hello, sign in'}</small>{_uiText("Account")} </span>
             <ChevronDown size={12} />
           </button>
           {headerMenu === 'account' ? (
@@ -194,19 +198,18 @@ export default function Storefront() {
                   router.push(customer.email ? '/account' : '/account/login');
                 }}
               >
-                {customer.email ? 'Your account' : 'Sign in'}
+                {customer.email ? 'Your account' : _uiText("Sign in")}
               </button>
               {!customer.email && <span>
                 New customer?{' '}
                 <button
                   onClick={() => router.push('/account/register')}
                 >
-                  Create account
-                </button>
+                  {_uiText("Create account")} </button>
               </span>}
               <hr />
               <button onClick={() => router.push('/account')}>My profile & addresses</button>
-              <Link href="/account/orders" onClick={() => setHeaderMenu(null)}>My orders</Link>
+              <Link href="/account/orders" onClick={() => setHeaderMenu(null)}>{_uiText("My orders")}</Link>
               <Link href="/wishlist">My wishlist</Link>
             </div>
           ) : null}
@@ -221,7 +224,7 @@ export default function Storefront() {
           >
             <Package size={20} />
             <span>
-              <small>Returns</small>& Orders
+              <small>{_uiText("Returns")}</small>& Orders
             </span>
             <ChevronDown size={12} />
           </button>
@@ -243,17 +246,18 @@ export default function Storefront() {
         </div>
         <Link className={`header-action ${customerNavigation.desktopWishlist}`} href="/wishlist" aria-label={`Wishlist, ${store.wishlist.length} saved products`}>
           <Heart size={21} />
-          <span>Wishlist</span>
+          <span>{_uiText("Wishlist")}</span>
           {store.wishlist.length > 0 && <b>{store.wishlist.length}</b>}
         </Link>
-        <Link className={customerNavigation.mobileAccount} href="/account" aria-label="Your account"><UserRound size={20} /><span>Account</span></Link>
+        <Link className={customerNavigation.mobileAccount} href="/account" aria-label="Your account"><UserRound size={20} /><span>{_uiText("Account")}</span></Link>
         <CustomerInbox customerId={customer.id} />
         <Link className="header-action trolley" href="/cart">
           <ShoppingBag size={21} />
-          <span>Cart</span>
+          <span>{_uiText("Cart")}</span>
           <b>{count}</b>
         </Link>
       </header>
+      <div className="store-locale-bar"><LocalizationControls displayCurrency /></div>
       <nav className="navigation">
         <div className="nav-links">
           <button
@@ -261,11 +265,11 @@ export default function Storefront() {
             onClick={() => setMenu(!menu)}
             aria-expanded={menu}
           >
-            <Menu size={16} /> All categories <ChevronDown size={12} />
+            <Menu size={16} /> {_uiText("All categories")} <ChevronDown size={12} />
           </button>
           <Link className={customerNavigation.mobileAccount} href="/wishlist" aria-label={`Wishlist, ${store.wishlist.length} saved products`}><Heart size={17} aria-hidden="true" /><span>Wishlist ({store.wishlist.length})</span></Link>
           <button onClick={() => browse('Fashion')}>Fashion</button>
-          <button onClick={() => browse('Electronics')}>Electronics</button>
+          <button onClick={() => browse('Electronics')}>{_uiText("Electronics")}</button>
           <button onClick={() => browse('Home & Living')}>Home & Living</button>
           <button onClick={() => browse('Beauty')}>Beauty</button>
           <button
@@ -274,7 +278,7 @@ export default function Storefront() {
               browse('All categories');
             }}
           >
-            New arrivals <i />
+            {_uiText("New arrivals")} <i />
           </button>
           <button
             className="deals-link"
@@ -334,7 +338,7 @@ export default function Storefront() {
                 className="text-button"
                 onClick={() => browse('All categories')}
               >
-                Explore products <ArrowRight size={17} />
+                {_uiText("Explore products")} <ArrowRight size={17} />
               </button>
             </div>
             <div className="hero-footnote">
@@ -481,7 +485,7 @@ export default function Storefront() {
               </h2>
             </div>
             <Link className="text-button" href="/products">
-              View all products <ArrowRight size={16} aria-hidden="true" />
+              {_uiText("View all products")} <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
           <div className="product-toolbar">
@@ -502,9 +506,9 @@ export default function Storefront() {
               Sort by:{' '}
               <select value={sort} onChange={(e) => setSort(e.target.value)}>
                 <option value="popular">Recommended</option>
-                <option value="low">Price: low to high</option>
-                <option value="high">Price: high to low</option>
-                <option value="rating">Highest rated</option>
+                <option value="low">{_uiText("Price: low to high")}</option>
+                <option value="high">{_uiText("Price: high to low")}</option>
+                <option value="rating">{_uiText("Highest rated")}</option>
               </select>
             </label>
           </div>
@@ -559,6 +563,7 @@ export default function Storefront() {
           </div>
           <span className="banner-number">01 / ∞</span>
         </section>
+        <ShoppingDiscovery/>
         <div id="newsletter"><NewsletterForm /></div>
       </main>
     </>

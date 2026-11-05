@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import {LocalizedText} from '@/localization/provider';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getConfiguration } from '@/features/storefront/server-catalog';
@@ -34,7 +35,7 @@ export default async function CategoryPage({
       <StoreHeader />
       <main className="category-page">
         <nav className="breadcrumbs">
-          <Link href="/">Home</Link>
+          <Link href="/"><LocalizedText text="Home" /></Link>
           <span>/</span>
           <span>{category.name}</span>
         </nav>
@@ -43,8 +44,7 @@ export default async function CategoryPage({
             <p className="eyebrow">THE HORNBOOK COLLECTION</p>
             <h1>{category.name}</h1>
             <p>
-              {category.subtitle} · {category.count} products
-            </p>
+              {category.subtitle} · {category.count} <LocalizedText text="products" /> </p>
           </div>
           <img src={photo(category.image)} alt="" />
         </header>

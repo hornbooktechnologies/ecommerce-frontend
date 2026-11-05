@@ -1,4 +1,5 @@
 'use client';
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart, Search, ShoppingBag, UserRound } from 'lucide-react';
@@ -6,8 +7,11 @@ import DeliveryChecker from './delivery-checker';
 import { useStore } from '@/features/storefront/store';
 import { useCustomerSummary } from '../use-customer-summary';
 import CustomerInbox from './customer-inbox';
+import {LocalizationControls} from '@/localization/provider';
 
 export default function StoreHeader() {
+ const {t: _uiText}=useUiLocalization();
+
   const customer = useCustomerSummary();
   const [accountOpen, setAccountOpen] = useState(false);
   const cart = useStore((state) => state.cart),
@@ -20,7 +24,7 @@ export default function StoreHeader() {
     useStore.persist.rehydrate();
   }, []);
   return (
-    <header className="detail-header">
+    <><header className="detail-header">
       <Link href="/" className="logo">
         <span className="logo-symbol">a</span>
         <span>
@@ -29,19 +33,19 @@ export default function StoreHeader() {
       </Link>
       <DeliveryChecker />
       <Link className="detail-search" href="/products">
-        <span>Search Hornbook Retail</span>
+        <span>{_uiText("Search Hornbook Retail")}</span>
         <Search size={19} />
       </Link>
       <nav>
-        <Link href="/">Home</Link>
-        <Link href="/#categories">Categories</Link>
-        <Link href="/#discover">Deals</Link>
+        <Link href="/">{_uiText("Home")}</Link>
+        <Link href="/#categories">{_uiText("Categories")}</Link>
+        <Link href="/#discover">{_uiText("Deals")}</Link>
       </nav>
       <div className="detail-actions">
         <CustomerInbox customerId={customer.id} />
         <div className="header-menu-wrap">
           <button
-            aria-label="Account menu"
+            aria-label={_uiText("Account menu")}
             aria-expanded={accountOpen}
             onClick={() => setAccountOpen((value) => !value)}
           >
@@ -49,15 +53,14 @@ export default function StoreHeader() {
           </button>
           {accountOpen ? (
             <div className="header-popover detail-account-popover">
-              <strong>{customer.email ? `Hello, ${customer.firstName}` : 'Your Hornbook account'}</strong>
-              <p>Manage your profile, password and delivery addresses.</p>
+              <strong>{customer.email ? `Hello, ${customer.firstName}` : _uiText("Your Hornbook account")}</strong>
+              <p>{_uiText("Manage your profile, password and delivery addresses.")}</p>
               <Link className="popover-primary" href="/account">
-                Go to account
-              </Link>
+                {_uiText("Go to account")} </Link>
               <hr />
-              <Link href="/account/orders" onClick={() => setAccountOpen(false)}>My orders</Link>
-              <Link href="/account/questions" onClick={() => setAccountOpen(false)}>My questions</Link>
-              {!customer.email && <><Link href="/account/login">Sign in</Link><Link href="/account/register">Create account</Link></>}
+              <Link href="/account/orders" onClick={() => setAccountOpen(false)}>{_uiText("My orders")}</Link>
+              <Link href="/account/questions" onClick={() => setAccountOpen(false)}>{_uiText("My questions")}</Link>
+              {!customer.email && <><Link href="/account/login">{_uiText("Sign in")}</Link><Link href="/account/register">{_uiText("Create account")}</Link></>}
             </div>
           ) : null}
         </div>
@@ -74,6 +77,6 @@ export default function StoreHeader() {
           <b>{count}</b>
         </Link>
       </div>
-    </header>
+    </header><div className="store-locale-bar"><LocalizationControls displayCurrency /></div></>
   );
 }

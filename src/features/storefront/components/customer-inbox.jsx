@@ -1,5 +1,6 @@
 'use client';
 
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -27,6 +28,8 @@ export default function CustomerInbox({ customerId }) {
 }
 
 function Inbox() {
+ const {t: _uiText}=useUiLocalization();
+
   const router = useRouter(), titleId = useId();
   const [open, setOpen] = useState(false), [closing, setClosing] = useState(false);
   const [filter, setFilter] = useState('ALL'), [page, setPage] = useState(1);
@@ -148,27 +151,27 @@ function Inbox() {
         const box = event.currentTarget.getBoundingClientRect();
         if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close();
       }}>
-      <header className={styles.heading}><div><p className={styles.eyebrow}>YOUR HORNBOOK ACCOUNT</p><h2 id={titleId}>Your updates</h2><p>{count === null ? 'Order, delivery and return updates' : `${count} unread across all types`}</p></div>
+      <header className={styles.heading}><div><p className={styles.eyebrow}>YOUR HORNBOOK ACCOUNT</p><h2 id={titleId}>{_uiText("Your updates")}</h2><p>{count === null ? 'Order, delivery and return updates' : `${count} unread across all types`}</p></div>
         <button className={styles.iconButton} autoFocus type="button" disabled={preferencesBusy} aria-label="Close notifications" onClick={() => close()}><X size={21} aria-hidden="true" /></button></header>
       <div className={styles.toolbar}><div className={styles.filters} role="group" aria-label="Filter notifications">
-        <button ref={filterButton} type="button" aria-pressed={filter === 'ALL'} disabled={pending || expired} onClick={() => { setFilter('ALL'); setPage(1); }}>All</button>
-        <button type="button" aria-pressed={filter === 'UNREAD'} disabled={pending || expired} onClick={() => { setFilter('UNREAD'); setPage(1); }}>Unread</button></div>
-        <button className={styles.textAction} type="button" disabled={narrowed || expired || pending || loading || !result?.readThroughId || !count} onClick={() => update(null)}><CheckCheck size={18} aria-hidden="true" />Mark all read</button>
+        <button ref={filterButton} type="button" aria-pressed={filter === 'ALL'} disabled={pending || expired} onClick={() => { setFilter('ALL'); setPage(1); }}>{_uiText("All")}</button>
+        <button type="button" aria-pressed={filter === 'UNREAD'} disabled={pending || expired} onClick={() => { setFilter('UNREAD'); setPage(1); }}>{_uiText("Unread")}</button></div>
+        <button className={styles.textAction} type="button" disabled={narrowed || expired || pending || loading || !result?.readThroughId || !count} onClick={() => update(null)}><CheckCheck size={18} aria-hidden="true" />{_uiText("Mark all read")}</button>
         <button className={styles.iconButton} type="button" aria-label="Refresh notifications" disabled={pending || loading || expired} onClick={() => { setActionError(''); setRefresh(value => value + 1); }}><RefreshCw size={18} aria-hidden="true" /></button></div>
       <div className={styles.scroll} aria-busy={loading || pending}>
-        {!expired ? <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--line)' }}><button className={styles.textAction} type="button" disabled={preferencesBusy || pending} aria-expanded={showPreferences} onClick={() => setShowPreferences((value) => !value)}>{showPreferences ? 'Hide preferences' : 'Notification preferences'}</button></div> : null}
+        {!expired ? <div style={{ padding: '12px 24px', borderBottom: '1px solid var(--line)' }}><button className={styles.textAction} type="button" disabled={preferencesBusy || pending} aria-expanded={showPreferences} onClick={() => setShowPreferences((value) => !value)}>{showPreferences ? 'Hide preferences' : _uiText("Notification preferences")}</button></div> : null}
         {!expired && showPreferences ? <CustomerInboxPreferences request={inboxRequest} onBusy={setPreferencesBusy} onExpired={() => setExpired(true)} toasterId={titleId} /> : null}
         <form className={styles.search} role="search" aria-label="Search your notifications" onSubmit={event => {
           event.preventDefault(); if (pending || expired) return; setSearch(searchDraft.trim()); setPage(1); setActionError(''); setRefresh(value => value + 1);
         }}>
           <fieldset disabled={pending || expired}>
-            <label>Notification type<select value={category} onChange={event => { setCategory(event.target.value); setPage(1); setActionError(''); }}>
-              <option value="ALL">All types</option><option value="ORDERS">Orders &amp; delivery</option><option value="QUESTIONS">Product questions</option>
-              <option value="RETURNS">Returns &amp; exchanges</option><option value="PAYMENTS">Payments</option><option value="WARRANTIES">Warranties</option>
+            <label>{_uiText("Notification type")}<select value={category} onChange={event => { setCategory(event.target.value); setPage(1); setActionError(''); }}>
+              <option value="ALL">{_uiText("All types")}</option><option value="SHOPPING">{_uiText("Shopping alerts")}</option><option value="ORDERS">Orders &amp; delivery</option><option value="QUESTIONS">{_uiText("Product questions")}</option>
+              <option value="RETURNS">Returns &amp; exchanges</option><option value="PAYMENTS">{_uiText("Payments")}</option><option value="WARRANTIES">{_uiText("Warranties")}</option>
             </select></label>
-            <label>Search updates<input ref={searchRef} type="search" maxLength={100} value={searchDraft} placeholder="Title or message"
+            <label>{_uiText("Search updates")}<input ref={searchRef} type="search" maxLength={100} value={searchDraft} placeholder="Title or message"
               onChange={event => setSearchDraft(event.target.value)} /></label>
-            <div className={styles.searchActions}><button type="submit">Search</button><button type="button" disabled={!narrowed && !searchDraft}
+            <div className={styles.searchActions}><button type="submit">{_uiText("Search")}</button><button type="button" disabled={!narrowed && !searchDraft}
               onClick={() => { setCategory('ALL'); setSearch(''); setSearchDraft(''); setPage(1); setActionError(''); searchRef.current?.focus(); }}>Clear search &amp; type</button></div>
           </fieldset>
           {narrowed && <p>Filtered results. Clear search and type to enable “Mark all read”.</p>}
@@ -177,21 +180,21 @@ function Inbox() {
         </form>
         {actionError && !expired && <p className={styles.error} role="alert">{actionError}</p>}
         {expired ? <div className={styles.empty}><Bell size={28} aria-hidden="true" /><h3>Sign in to see your updates</h3><p>Your session has ended. Your notifications are safely saved to your account.</p><Link href="/account/login" onClick={() => close()}>Sign in again</Link></div>
-          : error ? <div className={styles.empty}><Bell size={28} aria-hidden="true" /><h3>Updates unavailable</h3><p role="alert">{error}</p><button type="button" onClick={() => setRefresh(value => value + 1)}>Try again</button></div>
+          : error ? <div className={styles.empty}><Bell size={28} aria-hidden="true" /><h3>Updates unavailable</h3><p role="alert">{error}</p><button type="button" onClick={() => setRefresh(value => value + 1)}>{_uiText("Try again")}</button></div>
           : !result ? <div className={styles.skeleton} role="status" aria-label="Loading notifications">{[1, 2, 3].map(key => <div key={key} aria-hidden="true"><i /><i /></div>)}</div>
           : !result.items.length ? <div className={styles.empty}><CheckCheck size={30} aria-hidden="true" /><h3>{narrowed ? 'No matching updates' : filter === 'UNREAD' ? 'You’re all caught up' : 'No updates yet'}</h3><p>{narrowed ? 'Try another type or search, or clear these filters to see other updates.' : filter === 'UNREAD' ? 'There are no unread updates for your account.' : 'New order, delivery and return updates will appear here. Earlier activity is not imported.'}</p></div>
           : <ol className={styles.list}>{result.items.map(item => {
             const href = customerNotificationDestination(item), Icon = item.category==='QUESTIONS'?MessageSquare:item.category === 'RETURNS' ? RotateCcw : item.category === 'WARRANTIES' ? ShieldCheck : Package;
             return <li key={item.id} data-unread={!item.readAt || undefined}><span className={styles.itemIcon}><Icon size={20} aria-hidden="true" /></span><div className={styles.copy}>
-              <div className={styles.itemTitle}><h3>{item.title}</h3>{!item.readAt && <span>Unread</span>}</div><p>{item.message}</p>
+              <div className={styles.itemTitle}><h3>{item.title}</h3>{!item.readAt && <span>{_uiText("Unread")}</span>}</div><p>{item.message}</p>
               <time>{customerNotificationTime(item.createdAt)}</time><div className={styles.itemActions}>
-                {href ? <button type="button" className={styles.textAction} disabled={pending} onClick={() => update(item, href)}>{item.target.type==='PRODUCT_QUESTION'?'View answer':item.target.type === 'RETURN' ? 'View return update' : 'View order'}<ArrowUpRight size={17} aria-hidden="true" /></button> : <small>Record link unavailable</small>}
+                {href ? <button type="button" className={styles.textAction} disabled={pending} onClick={() => update(item, href)}>{item.target.type==='SHOPPING_REMINDER'?'View saved items':item.target.type==='SHOPPING_ALERT'?'View shopping alert':item.target.type==='PRODUCT_QUESTION'?'View answer':item.target.type === 'RETURN' ? 'View return update' : _uiText("View order")}<ArrowUpRight size={17} aria-hidden="true" /></button> : <small>Record link unavailable</small>}
                 <button type="button" className={styles.textAction} disabled={pending} aria-label={`Mark ${item.title} ${item.readAt ? 'unread' : 'read'}`} onClick={() => update(item)}>Mark {item.readAt ? 'unread' : 'read'}</button>
               </div></div></li>;
           })}</ol>}
       </div>
-      <footer className={styles.footer}><span className={styles.srOnly} role="status">{announcement}</span><span>{pending ? 'Saving…' : result?.total ? `${(page - 1) * 10 + 1}–${Math.min(page * 10, result.total)} of ${result.total}` : '10 updates per page'}</span>
-        <nav aria-label="Notification pages"><button type="button" className={styles.iconButton} aria-label="Previous notifications page" disabled={expired || pending || loading || page <= 1} onClick={() => setPage(value => value - 1)}><ChevronLeft size={18} aria-hidden="true" /></button><span>Page {page}{result ? ` of ${result.totalPages}` : ''}</span><button type="button" className={styles.iconButton} aria-label="Next notifications page" disabled={expired || pending || loading || !result || page >= result.totalPages} onClick={() => setPage(value => value + 1)}><ChevronRight size={18} aria-hidden="true" /></button></nav>
+      <footer className={styles.footer}><span className={styles.srOnly} role="status">{announcement}</span><span>{pending ? _uiText("Saving…") : result?.total ? `${(page - 1) * 10 + 1}–${Math.min(page * 10, result.total)} of ${result.total}` : '10 updates per page'}</span>
+        <nav aria-label="Notification pages"><button type="button" className={styles.iconButton} aria-label="Previous notifications page" disabled={expired || pending || loading || page <= 1} onClick={() => setPage(value => value - 1)}><ChevronLeft size={18} aria-hidden="true" /></button><span>{_uiText("Page")} {page}{result ? ` of ${result.totalPages}` : ''}</span><button type="button" className={styles.iconButton} aria-label="Next notifications page" disabled={expired || pending || loading || !result || page >= result.totalPages} onClick={() => setPage(value => value + 1)}><ChevronRight size={18} aria-hidden="true" /></button></nav>
       </footer>
       <Toaster id={titleId} className={styles.toaster} position="bottom-right" theme="light" richColors duration={2500} visibleToasts={1} toastOptions={{ style: { fontFamily: 'inherit', fontSize: 13 } }} />
     </dialog>, document.body)}

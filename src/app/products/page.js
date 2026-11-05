@@ -1,3 +1,4 @@
+import {LocalizedText} from '@/localization/provider';
 import Link from 'next/link';
 import StoreHeader from '@/features/storefront/components/store-header';
 import CategoryCatalog from '@/features/storefront/components/category-catalog';
@@ -14,7 +15,7 @@ export default function ProductsPage() {
     <StoreHeader />
     <main className="category-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">All products</span>
+        <Link href="/"><LocalizedText text="Home" /></Link><span aria-hidden="true">/</span><span aria-current="page"><LocalizedText text="All products" /></span>
       </nav>
       <header className={styles.heading}>
         <p className="eyebrow">THE HORNBOOK COLLECTION</p>

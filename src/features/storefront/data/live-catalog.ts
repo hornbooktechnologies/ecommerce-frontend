@@ -41,6 +41,7 @@ export type Category = {
   count: number;
 };
 export type Configuration = {
+  localization?: {schemaVersion:number;scopeKey:string;defaultLanguage:string;languages:string[];currencies:string[];availableCurrencies:string[];baseCurrency:string;checkoutCurrency:string;mode:string;inrPerUnit:Record<string,number>;rateDetails:Record<string,{asOf:string;validUntil:string}>;revision:number};
   appearance?: { schemaVersion: number; mode: 'light' | 'dark' | 'system'; cssText: string; revision: string; scope: { kind: string; tenantId: string | null; storeId: string | null } };
   store: { name: string; tenantName: string; code: string; currency: string };
   categories: Category[];
@@ -49,8 +50,8 @@ export type Configuration = {
   homepageSections?: { sections: HomepageSection[] } | null;
 };
 export type HomepageSection = {
-  key: 'DEALS' | 'DISCOVER' | 'FRESH'; title: string; subtitle: string;
-  viewAllHref: string; viewAllLabel: string; items: Product[];
+  key: 'DEALS' | 'DISCOVER' | 'FRESH' | `COLLECTION_${string}`; title: string; subtitle: string;
+  viewAllHref: string; viewAllLabel: string; items: Product[];collectionSlug?:string;
 } | {
   key: 'BANNER'; title: string; subtitle: string; eyebrow: string; badgeText: string;
   imageUrl: string; altText: string; href: string; ctaLabel: string;
@@ -84,6 +85,8 @@ export type Variant = {
   mrp: number;
   sellerName: string;
   sellerId?: string;
+  sellerProfileHref?: string | null;
+  sellerRating?: {average: number | null; count: number};
   includesTax?: boolean;
   availableQuantity: number;
   minimumOrderQuantity: number;

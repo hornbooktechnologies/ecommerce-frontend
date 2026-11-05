@@ -1,5 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
+import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,7 +13,7 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
-import { money, photo } from '@/features/storefront/data/live-catalog';
+import { photo } from '@/features/storefront/data/live-catalog';
 import {
   useCatalog,
   useCatalogQuery,
@@ -56,6 +57,8 @@ export default function SearchExperience({
   setCategory: (value: string) => void;
   onShowAll: () => void;
 }) {
+ const {t: _uiText,money: _localizedMoney}=useUiLocalization();
+
   const { categories } = useCatalog();
   const results = useCatalogQuery({
     search: query,
@@ -136,7 +139,7 @@ export default function SearchExperience({
       <div className="search-category-control">
         <button
           type="button"
-          aria-label="Search category"
+          aria-label={_uiText("Search category")}
           aria-expanded={categoryOpen}
           onClick={() => {
             setCategoryOpen((value) => !value);
@@ -172,7 +175,7 @@ export default function SearchExperience({
       <Search className="search-leading" size={18} />
       <input
         ref={inputRef}
-        aria-label="Search all products"
+        aria-label={_uiText("Search all products")}
         placeholder="Search for products, brands and categories"
         value={query}
         onFocus={() => {
@@ -228,8 +231,7 @@ export default function SearchExperience({
                     localStorage.removeItem(STORAGE_KEY);
                   }}
                 >
-                  Clear
-                </button>
+                  {_uiText("Clear")} </button>
               </h3>
               <div className="search-chips">
                 {recent.map((item) => (
@@ -297,8 +299,8 @@ export default function SearchExperience({
                       <em>{product.category}</em>
                     </span>
                     <span className="suggestion-price">
-                      <b>{money(product.price)}</b>
-                      <del>{money(product.mrp)}</del>
+                      <b>{_localizedMoney(product.price)}</b>
+                      <del>{_localizedMoney(product.mrp)}</del>
                     </span>
                   </Link>
                 );
@@ -307,7 +309,7 @@ export default function SearchExperience({
               {results.error && (
                 <p role="alert">
                   {results.error}{' '}
-                  <button onClick={results.retry}>Try again</button>
+                  <button onClick={results.retry}>{_uiText("Try again")}</button>
                 </p>
               )}
               {!results.loading && !results.error && matches.length === 0 ? (
