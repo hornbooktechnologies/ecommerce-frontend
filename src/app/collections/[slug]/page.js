@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import {LocalizedText} from '@/localization/provider';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -79,7 +80,7 @@ export default async function CollectionPage({ params, searchParams }) {
           data-image={Boolean(collection.imageUrl)}
         >
           {collection.imageUrl && (
-            <img
+            <Image unoptimized width={1600} height={600}
               className={styles.banner}
               src={collection.imageUrl}
               alt={collection.altText}

@@ -1,4 +1,5 @@
 'use client';
+import {useClientResource} from '../use-client-resource';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
 import {useEffect,useId,useRef,useState} from 'react';
 import {toast} from 'sonner';
@@ -16,8 +17,8 @@ function SellerReview({item,orderId,onSaved,onExpired}){
  </article>;
 }
 export default function OrderSellerRatings({orderId,onExpired}){
- const [state,setState]=useState({key:orderId,loading:true,items:[],error:''}),[attempt,setAttempt]=useState(0),expired=useRef(onExpired);expired.current=onExpired;
- useEffect(()=>{const controller=new AbortController();setState({key:orderId,loading:true,items:[],error:''});send('list',{orderId},controller.signal).then(data=>{if(!controller.signal.aborted)setState({key:orderId,loading:false,items:data.items,error:''});}).catch(cause=>{if(!controller.signal.aborted){if(cause.status===401)expired.current();setState({key:orderId,loading:false,items:[],error:cause.message});}});return()=>controller.abort();},[orderId,attempt]);
- const data=state.key===orderId?state:{loading:true,items:[],error:''};
- return <section className={styles.reviews} aria-label="Seller feedback"><div className={styles.heading}><p>One rating per marketplace seller order. Feedback is checked before publication and does not change product ratings.</p><button type="button" disabled={data.loading} onClick={()=>setAttempt(value=>value+1)}>Refresh seller ratings</button></div>{data.loading?<p role="status">Loading seller feedback…</p>:data.error?<p role="alert" className={styles.error}>{data.error}</p>:!data.items.length?<p>No marketplace seller orders are linked to this purchase.</p>:data.items.map(item=><SellerReview key={item.sellerOrderId} item={item} orderId={orderId} onExpired={()=>expired.current()} onSaved={review=>setState(current=>({...current,items:current.items.map(value=>value.sellerOrderId===item.sellerOrderId?{...value,review}:value)}))}/>)}</section>;
+ const [attempt,setAttempt]=useState(0);
+ const {data:result,error,loading,setData}=useClientResource(JSON.stringify([orderId,attempt]),async signal=>{try{return await send('list',{orderId},signal);}catch(cause){if(!signal.aborted&&cause.status===401)onExpired();throw cause;}});
+ const data={loading,items:result?.items||[],error:error?.message||''};
+ return <section className={styles.reviews} aria-label="Seller feedback"><div className={styles.heading}><p>One rating per marketplace seller order. Feedback is checked before publication and does not change product ratings.</p><button type="button" disabled={data.loading} onClick={()=>setAttempt(value=>value+1)}>Refresh seller ratings</button></div>{data.loading?<p role="status">Loading seller feedback…</p>:data.error?<p role="alert" className={styles.error}>{data.error}</p>:!data.items.length?<p>No marketplace seller orders are linked to this purchase.</p>:data.items.map(item=><SellerReview key={item.sellerOrderId} item={item} orderId={orderId} onExpired={onExpired} onSaved={review=>setData(current=>({...current,items:current.items.map(value=>value.sellerOrderId===item.sellerOrderId?{...value,review}:value)}))}/>)}</section>;
 }

@@ -1,5 +1,6 @@
 'use client';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
+import {useClientResource} from '../use-client-resource';
 import {useEffect,useRef,useState} from 'react';
 import {toast} from 'sonner';
 import {shoppingRequest,useShoppingIdentity} from '../shopping-client';
@@ -7,8 +8,8 @@ import styles from './shopping-reminders.module.css';
 const when=value=>{const date=new Date(value);return Number.isFinite(date.getTime())?new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeZone:'Asia/Kolkata'}).format(date):'Not set';};
 export function ShoppingReminders({kind}){const identity=useShoppingIdentity();if(!identity.ready||!identity.customerId||identity.failed)return null;return kind?<details key={`${identity.customerId}:${kind}`} className={styles.disclosure}><summary>{kind==='CART'?'Manage optional bag reminders':'Manage optional wishlist reminders'}</summary><Preferences kind={kind}/></details>:<Preferences key={`${identity.customerId}:ALL`}/>;}
 function Preferences({kind}){
- const [result,setResult]=useState(null),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
- useEffect(()=>{const controller=new AbortController();setResult(null);setError('');shoppingRequest('reminders/settings',{}, {signal:controller.signal}).then(data=>{if(!controller.signal.aborted)setResult(data);}).catch(cause=>{if(!controller.signal.aborted)setError(cause.message);});return()=>controller.abort();},[attempt]);
+ const [attempt,setAttempt]=useState(0);
+ const {data:result,error:failure}=useClientResource(String(attempt),signal=>shoppingRequest('reminders/settings',{}, {signal}));const error=failure?.message||'';
  return <section className={styles.panel} aria-label="Cart and wishlist reminder preferences"><header><h2>Optional shopping reminders</h2><p>In-app only. Separate from stock/price alerts and newsletter consent. Nothing is enabled automatically.</p></header>{error?<p role="alert">{error} <button type="button" onClick={()=>setAttempt(value=>value+1)}>Retry preferences</button></p>:!result?<p role="status">Loading reminder preferences…</p>:<>{result.items.filter(item=>!kind||item.kind===kind).map(item=><Preference key={`${item.kind}:${item.version}`} item={item}/>)}<button className={styles.refresh} type="button" onClick={()=>setAttempt(value=>value+1)}>Refresh reminder settings</button></>}</section>;
 }
 function Preference({item}){

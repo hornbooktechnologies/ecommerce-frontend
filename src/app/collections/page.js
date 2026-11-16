@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import {LocalizedText} from '@/localization/provider';
 import Link from 'next/link';
 import StoreHeader from '@/features/storefront/components/store-header';
@@ -36,7 +37,7 @@ export default async function CollectionsPage({ searchParams }) {
               className={styles.collectionLink}
             >
               {item.imageUrl && (
-                <img src={item.imageUrl} alt={item.altText} loading="lazy" />
+                <Image unoptimized width={1600} height={600} src={item.imageUrl} alt={item.altText} loading="lazy" />
               )}
               <div>
                 <h2>{item.title}</h2>

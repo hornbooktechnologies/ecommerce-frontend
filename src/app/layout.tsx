@@ -47,7 +47,7 @@ export default async function RootLayout({
       <head>{configuration.appearance && <style data-storefront-appearance dangerouslySetInnerHTML={{ __html: configuration.appearance.cssText }} />}</head>
       {/* Browser extensions can add body attributes before React hydrates. */}
       <body suppressHydrationWarning>
-        <LocalizationProvider key={scope} scope={scope} settings={localization} initialLanguage={language} initialCurrency={requestedCurrency||'INR'} initialTime={Date.now()}>
+        <LocalizationProvider key={scope} scope={scope} settings={localization} initialLanguage={language} initialCurrency={requestedCurrency||'INR'} initialTime={configuration.serverTime}>
         <CurrencyNotice />
         <CatalogProvider
           configuration={configuration}

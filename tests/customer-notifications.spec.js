@@ -32,6 +32,8 @@ async function fixture(page, size = 12) {
     const url = new URL(route.request().url()), method = route.request().method();
     const json = data => route.fulfill({ json: { data } });
     if (url.pathname === '/api/customer/me') return state.customer ? json({ customer: state.customer, addresses: [] }) : route.fulfill({ status: 401, json: { error: { message: 'Sign in.' } } });
+    if (url.pathname === '/api/customer/discovery') return json({recent:[],recommendations:[],history:{enabled:true,version:0}});
+    if (url.pathname === '/api/customer/reminders/settings') return json({items:[]});
     if (url.pathname.includes('/notifications')) {
       state.requests.push({ path: url.pathname, query: url.search, method });
       if (state.expired || state.fail) return route.fulfill({ status: state.expired ? 401 : 503, json: { error: { message: state.expired ? 'Please sign in again.' : 'Notifications temporarily unavailable.' } } });
@@ -54,6 +56,29 @@ async function fixture(page, size = 12) {
   });
   return state;
 }
+
+test('notification preferences reload saved values and preserve explicit opt-in',async({page})=>{
+  await fixture(page,1);
+  const saved={revision:1,options:[{category:'SHOPPING',label:'Shopping alerts',enabled:false}],required:[{label:'Security updates'}]};
+  await page.route('**/api/customer/notifications/preferences',async route=>{
+    if(route.request().method()==='PUT'){
+      const body=route.request().postDataJSON();expect(body.revision).toBe(saved.revision);saved.revision++;
+      saved.options[0].enabled=!body.disabledCategories.includes('SHOPPING');
+    }
+    return route.fulfill({json:{data:saved}});
+  });
+  await page.goto('/account/orders');await bell(page).click();
+  await panel(page).getByRole('button',{name:'Notification preferences',exact:true}).click();
+  const checkbox=panel(page).getByRole('checkbox',{name:'Shopping alerts',exact:true});
+  await expect(checkbox).not.toBeChecked();await checkbox.check();
+  await expect(panel(page).getByRole('button',{name:'Save preferences',exact:true})).toBeEnabled();
+  await panel(page).getByRole('button',{name:'Reload saved preferences (discard edits)',exact:true}).click();
+  await expect(checkbox).not.toBeChecked();await checkbox.check();
+  await panel(page).getByRole('button',{name:'Save preferences',exact:true}).click();
+  await expect(panel(page).getByText('Preferences saved for future in-app deliveries. Existing updates are unchanged.')).toBeVisible();
+  await expect(checkbox).toBeChecked();expect(saved.options[0].enabled).toBe(true);
+  await panel(page).getByRole('button',{name:'Close notifications'}).click();
+});
 
 const bell = page => page.getByRole('button', { name: /^Notifications/ });
 const panel = page => page.getByRole('dialog', { name: 'Your updates' });

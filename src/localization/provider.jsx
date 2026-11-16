@@ -15,9 +15,11 @@ import {
   activeCurrencies,
   price,
 } from "./core";
+import {useHydrated} from "../features/storefront/use-client-resource";
 import styles from "./localization.module.css";
 const Context = createContext(null);
 const allLanguages = ["en", "hi", "gu"];
+/** @param {{children:import('react').ReactNode,initialLanguage?:string,initialCurrency?:string,settings?:import('../features/storefront/data/live-catalog').Configuration['localization']|null,scope?:string,initialTime?:number}} props */
 export function LocalizationProvider({
   children,
   initialLanguage = "en",
@@ -163,8 +165,7 @@ export function LocalizedText({ text }) {
 }
 export function LocalizationControls({ displayCurrency = false }) {
   const {interactive}=useLocalization();
-  const [ready,setReady]=useState(false);
-  useEffect(()=>setReady(true),[]);
+  const ready=useHydrated();
   const {
     language,
     currency,

@@ -15,6 +15,13 @@ export default function ProductCard({ product }: { product: Product }) {
   const saved = useStore((state) => state.wishlist.includes(product.id));
   const wishBusy = useStore((state) => state.wishBusy);
   const href = `/p/${product.slug}?offer=${encodeURIComponent(product.offerId)}`;
+  const hasPriceReduction = Number.isFinite(product.price) && Number.isFinite(product.mrp)
+    && product.price >= 0 && product.mrp > 0 && product.mrp > product.price;
+  const discountPercent = hasPriceReduction ? Math.round((1 - product.price / product.mrp) * 100) : 0;
+  const configuredTag = product.tag?.trim() || '';
+  // Percentage badges describe this offer's current price, not an old marketing value.
+  const isDiscountTag = /^\d+(?:\.\d+)?\s*%\s*off$/i.test(configuredTag);
+  const badgeText = isDiscountTag ? (discountPercent > 0 ? `${discountPercent}% OFF` : '') : configuredTag;
   return (
     <article className="product-card">
       <div className="product-image" style={{ background: product.color }}>
@@ -31,11 +38,11 @@ export default function ProductCard({ product }: { product: Product }) {
             decoding="async"
           />
         </Link>
-        <span
-          className={`product-tag ${product.tag.includes('OFF') ? 'sale' : ''}`}
+        {badgeText && <span
+          className={`product-tag ${isDiscountTag ? 'sale' : ''}`}
         >
-          {product.tag}
-        </span>
+          {badgeText}
+        </span>}
         <button
           className={`wish-button ${saved ? 'saved' : ''}`}
           aria-label={`${saved ? 'Remove from' : 'Add to'} wishlist: ${product.name}`}
@@ -67,12 +74,10 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
         <div className="price">
           <strong>{_localizedMoney(product.price)}</strong>
-          {product.mrp > product.price && (
+          {hasPriceReduction && (
             <>
               <del>{_localizedMoney(product.mrp)}</del>
-              <span>
-                {Math.round((1 - product.price / product.mrp) * 100)}% off
-              </span>
+              {discountPercent > 0 && <span>{discountPercent}% off</span>}
             </>
           )}
         </div>

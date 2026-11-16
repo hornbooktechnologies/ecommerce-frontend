@@ -538,5 +538,8 @@
   "All checkout amounts below are in INR. Converted browsing prices are estimates only.": [
     "नीचे चेकआउट की सभी राशियाँ INR में हैं। बदली गई ब्राउज़िंग कीमतें केवल अनुमान हैं।",
     "નીચે ચેકઆઉટની બધી રકમ INR માં છે. રૂપાંતરિત બ્રાઉઝિંગ કિંમતો માત્ર અંદાજ છે."
-  ]
+  ],
+  "Business totals exclude online test orders. Order value is not collected cash. Test orders remain available in Orders.": ["व्यावसायिक योग में ऑनलाइन टेस्ट ऑर्डर शामिल नहीं हैं। ऑर्डर मूल्य एकत्रित नकद नहीं है। टेस्ट ऑर्डर ऑर्डर सूची में उपलब्ध हैं।","વ્યવસાયના કુલમાં ઑનલાઇન ટેસ્ટ ઓર્ડર સામેલ નથી. ઓર્ડરનું મૂલ્ય વસૂલ કરેલી રોકડ નથી. ટેસ્ટ ઓર્ડર ઓર્ડરની યાદીમાં ઉપલબ્ધ છે."],
+  "Test orders are excluded. Ledger balances are not collected cash or confirmed payouts. Summary cards cover all business entries; filters affect the listing only.": ["टेस्ट ऑर्डर शामिल नहीं हैं। लेजर शेष एकत्रित नकद या पुष्टि किए गए भुगतान नहीं हैं। सारांश सभी व्यावसायिक प्रविष्टियों का है; फ़िल्टर केवल सूची पर लागू हैं।","ટેસ્ટ ઓર્ડર સામેલ નથી. લેજર બેલેન્સ વસૂલ કરેલી રોકડ કે પુષ્ટિ કરેલા પેઆઉટ નથી. સારાંશ બધી વ્યવસાયિક એન્ટ્રીનો છે; ફિલ્ટર્સ માત્ર યાદી પર લાગુ પડે છે."],
+  "Vendor sales exclude online test orders. Sales are order value, not collected cash.": ["विक्रेता बिक्री में ऑनलाइन टेस्ट ऑर्डर शामिल नहीं हैं। बिक्री ऑर्डर का मूल्य है, एकत्रित नकद नहीं।","વિક્રેતાના વેચાણમાં ઑનલાઇન ટેસ્ટ ઓર્ડર સામેલ નથી. વેચાણ ઓર્ડરનું મૂલ્ય છે, વસૂલ કરેલી રોકડ નહીં."]
 }

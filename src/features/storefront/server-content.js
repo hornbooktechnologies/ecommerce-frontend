@@ -19,7 +19,8 @@ async function read(path) {
   if (!payload.data) throw new ContentPageError(503, 'Store information is temporarily unavailable.');
   return payload.data;
 }
-export const getStorePages = cache(async () => {
+/** @returns {Promise<{items:Array<{slug:string,title:string,path:string,publishedAt?:string}>,unavailable:boolean}>} */
+async function listStorePages(){
   try {
     const data = await read('');
     if (!Array.isArray(data.items)) throw new Error('Invalid page index');
@@ -27,7 +28,8 @@ export const getStorePages = cache(async () => {
       .slice(0, 6).map((item) => ({ slug: item.slug, title: item.title.slice(0, 120), path: `/pages/${item.slug}`, publishedAt: item.publishedAt }));
     return { items, unavailable: false };
   } catch { return { items: [], unavailable: true }; }
-});
+}
+export const getStorePages=cache(listStorePages);
 export const getStorePage = cache(async (slug) => {
   if (!contentSlugs.includes(slug)) throw new ContentPageError(404, 'This page is unavailable.');
   const data = await read(`/${encodeURIComponent(slug)}`);

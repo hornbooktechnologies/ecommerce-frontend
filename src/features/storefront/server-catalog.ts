@@ -19,6 +19,7 @@ export class CatalogError extends Error {
 export async function fetchCatalog<T>(
   path: string,
   filters: Filters = {},
+  onResponse?: (response:Response)=>void,
 ): Promise<T> {
   const origin = (
     process.env.STOREFRONT_API_URL || 'http://localhost:4000/api/storefront/v1'
@@ -52,11 +53,16 @@ export async function fetchCatalog<T>(
           ? 'Please check your search filters.'
           : 'The store is temporarily unavailable. Please try again.',
     );
+  onResponse?.(response);
   return (await response.json()).data as T;
 }
-export const getConfiguration = cache(() =>
-  fetchCatalog<Configuration>('config'),
-);
+export const getConfiguration = cache(async () => {
+  let serverTime=0;
+  const configuration=await fetchCatalog<Configuration>('config',{},response=>{
+    const parsed=Date.parse(response.headers.get('date')||'');if(Number.isFinite(parsed))serverTime=parsed;
+  });
+  return {...configuration,serverTime};
+});
 export const getProduct = cache((slug: string) =>
   fetchCatalog<ProductDetail>(`products/${encodeURIComponent(slug)}`),
 );

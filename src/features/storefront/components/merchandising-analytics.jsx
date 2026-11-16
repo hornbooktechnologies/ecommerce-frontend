@@ -1,4 +1,5 @@
 'use client';
+import {useHydrated,useClientTime} from '../use-client-resource';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
 import {
   createContext,
@@ -41,9 +42,13 @@ export function MerchandisingProvider({ children }) {
     [error, setError] = useState(''),
     pathname = usePathname(),
     active = useRef(false);
+  const now=useClientTime(),generation=useRef(0),saving=useRef(false);
   const refresh = useCallback(async () => {
+    if(saving.current)return;
+    const version=++generation.current;
     try {
       const data = await api('settings');
+      if(version!==generation.current)return;
       setState({
         ready: true,
         ...data,
@@ -51,17 +56,20 @@ export function MerchandisingProvider({ children }) {
       });
       setError('');
     } catch (cause) {
+      if(version!==generation.current)return;
       setState({ ready: true, enabled: false });
       setError(cause.message);
     }
   }, []);
   useEffect(() => {
-    void refresh();
+    let disposed=false;const version=++generation.current;
+    api('settings').then(data=>{if(!disposed&&version===generation.current){setState({ready:true,...data,privacySignal:privacyBlocked()||data.privacySignal});setError('');}}).catch(cause=>{if(!disposed&&version===generation.current){setState({ready:true,enabled:false});setError(cause.message);}});
     const focus = () => void refresh();
     window.addEventListener('focus', focus);
-    return () => window.removeEventListener('focus', focus);
+    return () => {disposed=true;window.removeEventListener('focus', focus);};
   }, [refresh]);
   const save = useCallback(async (enabled) => {
+    generation.current++;saving.current=true;
     active.current = false;
     setError('');
     try {
@@ -79,13 +87,13 @@ export function MerchandisingProvider({ children }) {
       setState((current) => ({ ...current, enabled: false }));
       setError(cause.message);
       throw cause;
-    }
+    }finally{saving.current=false;}
   }, []);
   const enabled =
     state.enabled &&
     !state.privacySignal &&
     !privacyBlocked() &&
-    (!state.expiresAt || Date.parse(state.expiresAt) > Date.now());
+    now>0 && (!state.expiresAt || Date.parse(state.expiresAt) > now);
   useEffect(() => {
     active.current = Boolean(enabled);
     if (!enabled) return;
@@ -94,7 +102,7 @@ export function MerchandisingProvider({ children }) {
       timers = new Map();
     let stopped = false;
     const send = (payload) => {
-      if (active.current && !privacyBlocked())
+      if (active.current && !privacyBlocked() && (!state.expiresAt || Date.parse(state.expiresAt)>Date.now()))
         void api('events', payload)
           .then((result) => {
             if (result.recorded === false) active.current = false;
@@ -201,7 +209,7 @@ export function MerchandisingProvider({ children }) {
       document.removeEventListener('auxclick', click, true);
       document.removeEventListener('visibilitychange', visibility);
     };
-  }, [enabled, pathname]);
+  }, [enabled, pathname, state.expiresAt]);
   const value = useMemo(
     () => ({ ...state, enabled, error, save, refresh }),
     [state, enabled, error, save, refresh],
@@ -212,14 +220,13 @@ export function MerchandisingConsent() {
  const {t: _uiText}=useUiLocalization();
 
   const context = useContext(Context),
-    [hydrated, setHydrated] = useState(false),
-    [checked, setChecked] = useState(false),
+    [draft, setDraft] = useState(null),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState('');
   // The streamed footer may hydrate after its provider has already fetched settings.
   // Keep this component's server and first client render identical in that case.
-  useEffect(() => setHydrated(true), []);
-  useEffect(() => setChecked(Boolean(context?.enabled)), [context?.enabled]);
+  const hydrated=useHydrated();
+  const checked=draft?.enabled===Boolean(context?.enabled)?draft.checked:Boolean(context?.enabled);
   if (!context) return null;
   if (!hydrated || !context.ready) return <p role="status" className={styles.consent}>Loading optional analytics preference…</p>;
   async function submit(event) {
@@ -254,7 +261,7 @@ export function MerchandisingConsent() {
             type="checkbox"
             checked={checked}
             disabled={busy || !context.ready || context.privacySignal}
-            onChange={(event) => setChecked(event.target.checked)}
+            onChange={(event) => setDraft({enabled:Boolean(context.enabled),checked:event.target.checked})}
           />
           <span>
             Allow collection views, product clicks and purchase attribution in

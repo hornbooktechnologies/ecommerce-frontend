@@ -1,5 +1,6 @@
 'use client';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
+import {useClientResource} from '../use-client-resource';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {MessageSquare,Send} from 'lucide-react';
@@ -12,8 +13,9 @@ import styles from './product-questions.module.css';
 export default function ProductQuestions({productSlug}){
  const {t: _uiText}=useUiLocalization();
 
- const customer=useCustomerSummary(),[page,setPage]=useState(1),[attempt,setAttempt]=useState(0),[result,setResult]=useState(null);
- useEffect(()=>{const controller=new AbortController();setResult(null);catalogRequest(`products/${encodeURIComponent(productSlug)}/questions?page=${page}&pageSize=10`,controller.signal).then(data=>setResult({data})).catch(error=>{if(!controller.signal.aborted)setResult({error:error.message});});return()=>controller.abort();},[productSlug,page,attempt]);
+ const customer=useCustomerSummary(),[page,setPage]=useState(1),[attempt,setAttempt]=useState(0);
+ const resource=useClientResource(JSON.stringify([productSlug,page,attempt]),signal=>catalogRequest(`products/${encodeURIComponent(productSlug)}/questions?page=${page}&pageSize=10`,signal));
+ const result=resource.error?{error:resource.error.message}:resource.data?{data:resource.data}:null;
  const data=result?.data;
  return <section id="questions" className={`live-product-section ${styles.section}`} aria-labelledby="product-questions-title"><div className={styles.heading}><div><p>BUY WITH CONFIDENCE</p><h2 id="product-questions-title">Questions &amp; answers</h2><span>Product facts, answered by the store or an eligible seller and reviewed before publication.</span></div><MessageSquare size={30} aria-hidden="true"/></div>
   {!result?<p role="status" className={styles.skeleton}>Loading published answers…</p>:result.error?<div role="alert"><p>{result.error}</p><button type="button" onClick={()=>setAttempt(value=>value+1)}>{_uiText("Try again")}</button></div>:!data.items.length?<p className={styles.empty}>No published answers yet. Ask about sizing, materials, compatibility or other product details.</p>:<><div>{data.items.map(item=><article className={styles.qa} key={item.id}><h3><span>Q.</span>{item.question}</h3><div className={styles.answer}><strong>A.</strong><div><p>{item.answer}</p><small>{item.kind==='VENDOR'?`Seller · ${item.seller}`:'Store team'} · {questionTime(item.answeredAt)} · Moderated answer</small></div></div></article>)}</div><QuestionPagination data={data} onChange={setPage}/></>}

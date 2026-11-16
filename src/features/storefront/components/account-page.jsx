@@ -1,5 +1,6 @@
 'use client';
 
+import {useHydrated} from '../use-client-resource';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
@@ -27,8 +28,7 @@ export default function AccountPage({ mode }) {
  const {t: _uiText}=useUiLocalization();
 
   const router = useRouter();
-  const [ready,setReady]=useState(false);
-  useEffect(()=>setReady(true),[]);
+  const ready=useHydrated();
   const [form, setForm] = useState({ email: '', password: '', firstName: '', lastName: '', newPassword: '', confirmPassword: '' });
   const [data, setData] = useState(null);
   const [profile, setProfile] = useState({ firstName: '', lastName: '', phone: '' });

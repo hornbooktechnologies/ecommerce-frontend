@@ -8,7 +8,7 @@ export const languages = {
   gu: { label: "ગુજરાતી", locale: "gu-IN" },
 };
 export const normalizeLanguage = (value) =>
-  Object.hasOwn(languages, value) ? value : "en";
+  value === "hi" ? "hi" : value === "gu" ? "gu" : "en";
 export function translate(language, key, values = {}) {
   if (typeof key !== "string") return key;
   const match = Object.hasOwn(messages, key)

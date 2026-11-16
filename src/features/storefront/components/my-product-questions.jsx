@@ -1,6 +1,7 @@
 'use client';
+import {useClientResource} from '../use-client-resource';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
-import {useEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {toast} from 'sonner';
 import StoreHeader from './store-header';
@@ -11,9 +12,12 @@ const label={PENDING:'Awaiting review',APPROVED:'Approved',REJECTED:'Not publish
 export default function MyProductQuestions({questionId}){
  const {t: _uiText}=useUiLocalization();
 
- const [page,setPage]=useState(1),[attempt,setAttempt]=useState(0),[result,setResult]=useState(null),[confirm,setConfirm]=useState(null),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(''),lock=useRef(false),generation=useRef(0);
- useEffect(()=>{const controller=new AbortController(),version=++generation.current;setResult(null);setConfirm(null);setActionError('');questionRequest('list',{page,pageSize:10,...(questionId?{questionId}:{})},controller.signal).then(data=>{if(!controller.signal.aborted&&generation.current===version)setResult({data});}).catch(error=>{if(!controller.signal.aborted&&generation.current===version)setResult({error:error.message,status:error.status});});return()=>controller.abort();},[page,questionId,attempt]);
- useEffect(()=>{const reset=()=>{generation.current++;setResult(null);setConfirm(null);setAttempt(value=>value+1);};const visible=()=>{if(document.visibilityState==='visible')reset();else{generation.current++;setResult(null);setConfirm(null);}};const channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('hornbook-bag'):null;if(channel)channel.onmessage=event=>{if(event.data==='account')reset();};window.addEventListener('customer-account-changed',reset);window.addEventListener('focus',reset);document.addEventListener('visibilitychange',visible);return()=>{channel?.close();window.removeEventListener('customer-account-changed',reset);window.removeEventListener('focus',reset);document.removeEventListener('visibilitychange',visible);};},[]);
+ const [page,setPage]=useState(1),[attempt,setAttempt]=useState(0),[visible,setVisible]=useState(true),[confirm,setConfirm]=useState(null),[busy,setBusy]=useState(false),[actionError,setActionError]=useState(''),lock=useRef(false),generation=useRef(0);
+ const resource=useClientResource(visible?JSON.stringify([page,questionId,attempt]):null,signal=>questionRequest('list',{page,pageSize:10,...(questionId?{questionId}:{})},signal));
+ const result=resource.error?{error:resource.error.message,status:resource.error.status}:resource.data?{data:resource.data}:null;
+ const invalidate=useCallback(()=>{generation.current++;},[]);
+ useEffect(()=>{invalidate();return invalidate;},[page,questionId,attempt,invalidate]);
+ useEffect(()=>{const reset=()=>{generation.current++;setVisible(true);setConfirm(null);setActionError('');setAttempt(value=>value+1);};const visible=()=>{if(document.visibilityState==='visible')reset();else{generation.current++;setVisible(false);setConfirm(null);}};const channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('hornbook-bag'):null;if(channel)channel.onmessage=event=>{if(event.data==='account')reset();};window.addEventListener('customer-account-changed',reset);window.addEventListener('focus',reset);document.addEventListener('visibilitychange',visible);return()=>{channel?.close();window.removeEventListener('customer-account-changed',reset);window.removeEventListener('focus',reset);document.removeEventListener('visibilitychange',visible);};},[]);
  async function withdraw(item){if(lock.current)return;lock.current=true;setBusy(true);setActionError('');const version=generation.current;try{const result=await questionRequest('withdraw',{questionId:item.id,version:item.version});if(version===generation.current){toast.success(result.message);setAttempt(value=>value+1);}}catch(error){if(version===generation.current){setActionError(error.message);toast.error(error.message);}}finally{lock.current=false;setBusy(false);}}
  const data=result?.data;
  return <><StoreHeader/><main className={styles.page}><nav className={styles.actions} aria-label="Account navigation"><Link href="/account">{_uiText("My account")}</Link><Link href="/account/orders">{_uiText("My orders")}</Link></nav><header className={styles.heading}><div><p>YOUR PRODUCT CONVERSATIONS</p><h1>{_uiText("My questions")}</h1><span>Follow review progress and read published answers. Withdrawing a question removes it from public view.</span></div></header>

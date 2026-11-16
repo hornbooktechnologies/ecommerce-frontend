@@ -1,5 +1,6 @@
 'use client';
 
+import {useClientResource} from '../use-client-resource';
 import {useLocalization as useUiLocalization} from '@/localization/provider';
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -9,21 +10,17 @@ export default function CustomerInboxPreferences({ request, onBusy, onExpired, t
  const {t: _uiText}=useUiLocalization();
 
   const id = useId(); const heading = useRef(null); const mutation = useRef(null);
-  const [data, setData] = useState(null); const [disabled, setDisabled] = useState([]);
-  const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  const [disabled, setDisabled] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [reload, setReload] = useState(0);
-  const expiredRef = useRef(onExpired); expiredRef.current = onExpired;
+  const expiredRef = useRef(onExpired); useEffect(()=>{expiredRef.current=onExpired;},[onExpired]);
   useEffect(() => { heading.current?.focus(); }, []);
   useEffect(() => { onBusy(saving); }, [saving, onBusy]);
   useEffect(() => () => { mutation.current?.abort(); onBusy(false); toast.dismiss(`${toasterId}-preferences`); }, [onBusy, toasterId]);
-  useEffect(() => {
-    const controller = new AbortController(); setLoading(true); setError(''); setMessage('');
-    request('/preferences', controller.signal)
-      .then((next) => { if (!controller.signal.aborted) { setData(next); setDisabled(next.options.filter((item) => !item.enabled).map((item) => item.category)); } })
-      .catch((failure) => { if (!controller.signal.aborted) { setError(failure.message || 'Preferences could not be loaded. Try reloading.'); if (failure.status === 401) expiredRef.current(); } })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [request, reload]);
+  const {data,setData,loading,error:loadError}=useClientResource(String(reload),async signal=>{
+    try {const next=await request('/preferences',signal);if(!signal.aborted)setDisabled(next.options.filter(item=>!item.enabled).map(item=>item.category));return next;}
+    catch(failure){if(!signal.aborted&&failure.status===401)expiredRef.current();throw failure;}
+  });
   const saved = data?.options.filter((item) => !item.enabled).map((item) => item.category).sort() || [];
   const dirty = JSON.stringify([...disabled].sort()) !== JSON.stringify(saved);
   async function save(event) {
@@ -51,8 +48,8 @@ export default function CustomerInboxPreferences({ request, onBusy, onExpired, t
       <div className={styles.actions}><button type="button" disabled={saving} onClick={() => { setDisabled([]); setMessage(''); }}>Enable all optional updates</button><button className={styles.save} type="submit" disabled={saving || !dirty}>{saving ? _uiText("Saving…") : 'Save preferences'}</button></div>
       {dirty ? <p>Changes are not saved yet.</p> : null}
     </form> : null}
-    {error ? <p className={styles.error} role="alert">{error}</p> : null}
+    {error||loadError ? <p className={styles.error} role="alert">{error||loadError.message}</p> : null}
     {message ? <p className={styles.success} role="status">{message}</p> : null}
-    <button className={styles.reload} type="button" disabled={saving || loading} onClick={() => setReload((value) => value + 1)}>Reload saved preferences{dirty ? ' (discard edits)' : ''}</button>
+    <button className={styles.reload} type="button" disabled={saving || loading} onClick={() => {setError('');setMessage('');setReload((value) => value + 1);}}>Reload saved preferences{dirty ? ' (discard edits)' : ''}</button>
   </section>;
 }
